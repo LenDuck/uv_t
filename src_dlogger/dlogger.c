@@ -41,8 +41,7 @@ dlog_t * dlog_newlog_file(const char *info, const char *fname, int flags){
   ret->file_logging = 0;
   ret->file_logger = fopen(fname,"a");
   if (ret->file_logger) ret->file_logging = 1;
-
-  ret->fd_logging = 0;
+  if (ret->file_logging) fprintf(ret->file_logger,"Log: %s\n\n",info);
 
   ret->info = malloc(1+strlen(info));
   if (ret->info) strcpy(ret->info,info);

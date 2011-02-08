@@ -282,7 +282,7 @@ int con_send_line(con_t con,char *data){
   Returns the length of the received data or -1
   or even 0 if the connection is closed
 */
-int con_recv(con_t con, void **target,int *size){
+int con_recv(con_t con, void **target,int size){
   int buffersize = 2048;
   void *buffer = NULL;
   int rva = 0;
@@ -294,16 +294,13 @@ int con_recv(con_t con, void **target,int *size){
   if (!size){
     if (con->logger) dlog_log_text("nosize",con->logger);
    /*Using standard size, might add print here*/
-  } else {
-    if (con->logger) dlog_log_text("size",con->logger);
-
-    buffersize = *size;
+    size = buffersize; 
   }
-  if (! *target){
-  if (con->logger) dlog_log_text("nobuffer",con->logger);
 
+  if (! *target){
+    if (con->logger) dlog_log_text("nobuffer",con->logger);
     /*allocate a big buffer*/
-    buffer = malloc(buffersize);
+    buffer = malloc(size);
     if (!buffer){
       if (con->logger) dlog_log_text("Buffer error",con->logger);
       return -1;
@@ -312,8 +309,12 @@ int con_recv(con_t con, void **target,int *size){
   }
   if (con->logger) dlog_log_text("R",con->logger);
 
-  rva = recv(con->sockfd, *target, buffersize, flags);
+  rva = recv(con->sockfd, *target, size, flags);
   if (rva == 0) {
+    perror("ccon");
+    printf("data %p,%d,%d\n",(void*)target,buffersize,flags);
+    fflush(stdout);
+    printf("buffer %p\n",(void*)*target);
     if (con->logger) dlog_log_text("Closed the connection",con->logger);
   } else if (rva == -1){
     if (con->logger) dlog_log_text("Error in receive",con->logger);
@@ -369,14 +370,15 @@ int con_line(con_t con, char **target){
       if (con->logger) dlog_log_text("cb",con->logger);
 
       con->buffer_filled_to = 0;
-      if (con->buffer_size == 0){
-        con->buffer_size = 2048;
-        con->buffer = malloc(con->buffer_size);
-        if (!con->buffer) exit(1);
-      }
+    }
+    
+    if (con->buffer_size == 0){
+      con->buffer_size = 2048;
+      con->buffer = malloc(con->buffer_size);
+      if (!con->buffer) exit(1);
     }
     if (con->logger) dlog_log_text("rc",con->logger);
-    rva = con_recv(con,(void**) &con->buffer,&con->buffer_size);
+    rva = con_recv(con,(void**) &con->buffer,con->buffer_size);
     if (con->logger) dlog_log_text("rc_",con->logger);
 
     if (rva < 0 ){

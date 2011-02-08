@@ -35,7 +35,7 @@ int con_send_line(con_t con, char *data);
   If *target == NULL, auto alocates (a block of *size big)
   If size == NULL, picks a size around 2K big (way too big)
 */
-int con_recv(con_t con, void **target,int *size);
+int con_recv(con_t con, void **target,int size);
 
 /*Sets *target to a valid line, if one ever is received */
 int con_line(con_t con, char **target);

@@ -19,6 +19,13 @@ client_state_t client_null(void){
 
   return ret;
 }
+
+void state_client_free(client_state_t *state){
+  if (!state) return;
+
+  free(state);
+}
+
 int client_subrun(client_state_t *state){
  char *buffer = NULL;
   int rva = 0;
@@ -35,6 +42,7 @@ int client_subrun(client_state_t *state){
     if (state->current_line) free(state->current_line);
     state->current_line = buffer;
   } else if (rva == CON_ERROR_CLOSED){ 
+    if (state->current_line) free(state->current_line);
     state->thread_state = THREAD_STATE_KILLNOW; 
   }
   pthread_mutex_unlock(&state->access);
@@ -56,6 +64,7 @@ void *client_handler(void *input){
     break;
   }
   printf("Done client %d\n",state->thread_state);
+  state_client_free(state);
   return NULL;
 }
 

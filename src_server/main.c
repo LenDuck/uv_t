@@ -19,12 +19,14 @@ global_state_t global_null(void){
   ret.outgoing_thread_state = THREAD_STATE_DEAD;
   return ret;
 }
-
+/*unsigned int sleep(unsigned int secs) */
 int outgoing_subrun(global_state_t *state){
-  int i=0;
+  
   if (!state) return CON_ERROR_UNKNOWN;
 
   /*insert spimming code here*/
+  global_send_all(state, "Want cookie? give me money!\n\r");
+  sleep(5);
   return CON_ERROR_NONE;
 }
 
@@ -89,7 +91,7 @@ int main(int argc, char **argv) {
 
   pthread_join(new_client->handler_thread,NULL);
   con_close(state->listen_connection);
-  con_close(new_client->connection);
+  //con_close(new_client->connection);
 
   dlog_log_text("Main done, closing log",state->log);
   dlog_close_log(state->log);

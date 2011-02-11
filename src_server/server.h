@@ -6,6 +6,8 @@
 
 
 #include <pthread.h>
+#include "con.h"
+#include "dlogger.h"
 
 #define THREAD_STATE_DEAD (1)
 #define THREAD_STATE_RUNNING (2)
@@ -25,7 +27,13 @@ typedef struct struct_client_state{
   
 } client_state_t;
 
+typedef struct struct_client_list{
+  struct struct_client_list *next;
+  client_state_t *current; 
+} client_list_t;
+
 typedef struct struct_global_state{
+  client_list_t *clients;
   pthread_mutex_t access;
 
   int users_online;
@@ -39,9 +47,14 @@ typedef struct struct_global_state{
 
 client_state_t client_null(void);
 global_state_t global_null(void);
+client_list_t *client_list_null(void);
+int global_addclient(global_state_t *gs,client_state_t *cl);
+int global_delclient(global_state_t *gs,client_state_t *cl);
+int global_send_all(global_state_t *gs, char *sendthis);
+
 int client_subrun(client_state_t *state);
 void *client_handler(void *input);
 int outgoing_subrun(global_state_t *state);
 
-void *outgoing_handler(void *data);
+//void *outgoing_handler(void *data);
 #endif

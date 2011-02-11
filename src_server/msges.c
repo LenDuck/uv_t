@@ -2,7 +2,7 @@
 
 /*
 typedef enum {
-  MSG_TYPE_CHAT_CLIENT,
+  MSG_TYPE_CHAT,
   MSG_TYPE_USER,
   MSG_TYPE_NAMES,
   MSG_TYPE_SAY,
@@ -36,14 +36,15 @@ msg_t* msg_get(con_t con) {
     printf("ERROR! No. : %d\n", status);
     return NULL;
   }
-  
+  int textsize = 128;
+  char *text = malloc(textsize);
   cmd_t *command = parse_command(buffer);
   msg_t *msg = malloc(sizeof(msg_t));
   if (cmd_compare(command->command, "CHAT")) {
     /* Received "CHAT", client auths, send "+OK" */
-    msg->text = NULL;
+    msg->text = "Authed";
     msg->status = STATUS_OK;
-    msg->msg_type = MSG_TYPE_OK;
+    msg->msg_type = MSG_TYPE_CHAT;
   } else if(cmd_compare(command->command, "USER")) {
     /* Received "USER", check in users_list if exists, if no match, reg.*/
     /*
@@ -60,24 +61,50 @@ msg_t* msg_get(con_t con) {
     msg->msg_type (found) ? MSG_TYPE_IN_USE : MSG_TYPE_OK;            
     msg->text = NULL;
     */
-    msg->text = NULL;
+    msg->text = "USER test";
     msg->status = STATUS_OK;
     msg->msg_type = MSG_TYPE_OK;
+    /*
+      TODO: Send all clients RENAME msg.
+    */
   } else if(cmd_compare(command->command, "NAMES")) {
     /* Received "NAMES"*/
     /*
       user_t *users_list = *FIRST_NODE*
-      printf("\n");
       while (users_list->next)
       {
-        
+        if (strln(text) < textsize - 2) {
+          sprintf(text, "%s\r\n", users_list->data);
+        } else {
+          text = realloc(text, textsize += 128);
+          sprintf(text, "%s\r\n", users_list->data);
+        }
       }
+      msg->status = STATUS_OK;
+      msg->msg_type = MSG_TYPE_NAMES;
+      msg->text = text;
     */
+    msg->text = "NAMES test";
+    msg->status = STATUS_OK;
+    msg->msg_type = MSG_TYPE_NAMES;
   } else if(cmd_compare(command->command, "SAY")) {
     /* Received "SAY"*/
+    msg->text = command->msg;
+    msg->status = STATUS_OK;
+    msg->msg_type = MSG_TYPE_SAY;
   }
 }
 
+int cmd_compare(char *a, char *b)
+{
+  int x, y;
+  x = strcmp(a, b);
+  y = strcasecmp(a, b);
+  if  (!x && !y) { return 0; }
+  else if (x && !y) { return 1; }
+  else if (x && y) { return 2; }
+  else return 4;
+}
 cmd_t* parse_command(char *buffer) {
   int i = 0, j = 0, size1 = 32, size2 = 32;
   char *command = malloc(size1), *text = malloc(size2);

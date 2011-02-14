@@ -26,6 +26,11 @@ int global_addclient(global_state_t *gs, client_state_t *cl){
   newc->current = cl;
   pthread_mutex_lock(&gs->access);
   cur = gs->clients;
+  if (!cur){
+    gs->clients = newc;
+    pthread_mutex_unlock(&gs->access);
+    return 0;
+  }
   cur->next = NULL;
 
   while (cur && cur->next){
@@ -81,6 +86,7 @@ int global_send_all(global_state_t *gs,char *sendme){
   /*add error check*/
   while (cur){
     if (cur->current) con_send_line(cur->current->connection, sendme);
+    cur = cur->next;
   }
   
   pthread_mutex_unlock(&gs->access);

@@ -12,7 +12,7 @@
 
 global_state_t global_null(void){
   global_state_t ret;
-
+  ret.clients = NULL;
   pthread_mutex_init(&ret.access,NULL);
   ret.users_online = 0;
   ret.listen_connection = NULL;
@@ -38,6 +38,7 @@ int listen_subrun(global_state_t *state){
  
   if (!new_client) return CON_ERROR_MEMORY;
   *new_client = client_null();
+  new_client->global = state;
   new_client->log = dlog_newlog_file("client log",
                                 "client.log",
                                 DLOG_FLAG_FFLUSH | DLOG_FLAG_NLINE);
@@ -45,7 +46,7 @@ int listen_subrun(global_state_t *state){
   if (new_client->connection){
     con_send_line(new_client->connection,
                   WELCOME);
-  } else {
+  } else { 
     fprintf(stderr,"Yikes %d\n",rva);
   }
   pthread_mutex_lock(&new_client->access);
@@ -53,6 +54,7 @@ int listen_subrun(global_state_t *state){
   rva = pthread_create(&new_client->handler_thread, NULL, client_handler, (void*) new_client);
   if (rva) perror("oops, thread");
   pthread_mutex_unlock(&new_client->access);
+
 
   return CON_ERROR_NONE;
 }
@@ -71,6 +73,7 @@ void *listen_handler(void *data){
     if (rva == CON_ERROR_NONE) continue;
     break;
   }
+  
   return NULL;
 }
 int main(int argc, char **argv) {
@@ -104,12 +107,18 @@ int main(int argc, char **argv) {
   if (rva) perror("oops, thread");
   pthread_mutex_unlock(&state->access);
 
+  {
+    pthread_t spimmer ;
+    rva = pthread_create(&spimmer,NULL,global_spim,(void*)state);
+    
+  }
+
   pthread_join(state->listen_thread,NULL);
-  con_close(state->listen_connection);
+  //con_close(state->listen_connection);
   //con_close(new_client->connection);
 
-  dlog_log_text("Main done, closing log",state->log);
-  dlog_close_log(state->log);
+  //dlog_log_text("Main done, closing log",state->log);
+  //dlog_close_log(state->log);
 
   fprintf(stderr,"done\n");
 

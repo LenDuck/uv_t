@@ -24,7 +24,7 @@ typedef struct struct_client_state{
   char *username;
   char *current_line;
 
-  
+  struct struct_global_state *global;  
 } client_state_t;
 
 typedef struct struct_client_list{

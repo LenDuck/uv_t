@@ -11,7 +11,8 @@
 
 typedef enum {
   CLIENT_STATE_CONNECTED = 1,
-  CLIENT_STATE_LOGGED_IN = 2
+  CLIENT_STATE_LOGGED_IN = 2,
+  CLIENT_STATE_NOT_ME = 4
 } enum_client_state;
 
 typedef enum {
@@ -40,8 +41,8 @@ typedef enum {
 } enum_msg_type;
 
 typedef enum {
-  STATUS_OK,
-  STATUS_NOT_OK
+  STATUS_POS,
+  STATUS_NEG
 } enum_status;
 
 typedef struct {

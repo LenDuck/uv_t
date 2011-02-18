@@ -19,8 +19,8 @@ typedef enum {
 } enum_msg_type;
 
 typedef enum {
-  STATUS_OK,
-  STATUS_NOT_OK
+  STATUS_POS,
+  STATUS_NEG
 } enum_status;
 
 typedef  status;
@@ -51,7 +51,7 @@ msg_t* msg_get(client_state_t *client) {
   if (cmd_compare(command->command, "CHAT")) {
     /* Received "CHAT", client auths, send "+OK" */
     msg->arg = "Authed";
-    msg->status = STATUS_OK;
+    msg->status = STATUS_POS;
     msg->msg_type = MSG_TYPE_CHAT;
   } else if(cmd_compare(command->command, "USER")) {
     /* Received "USER", check in users_list if exists, if no match, reg.*/
@@ -65,13 +65,21 @@ msg_t* msg_get(client_state_t *client) {
       }
       clients = clients->next;
     }
-    msg->status = (found) ? STATUS_NOT_OK : STATUS_OK;
+    msg->status = (found) ? STATUS_NEG : STATUS_POS;
     msg->msg_type (found) ? MSG_TYPE_IN_USE : MSG_TYPE_OK;
     msg->arg = NULL;
     /*
       Send all other clients RENAME msg.
     */
-    clients = client->global->clients;
+    if (!(found)) {
+      msg_t *mesg = malloc(sizeof(msg_t));
+      mesg->arg = malloc(strln(curr_client->username) + strln(command->msg) + 2);
+      sprintf(mesg->arg, "%s/%s\n", curr_cliet->username, command->msg);
+      mesg->msg_type = MSG_TYPE_RENAME;
+      mesg->status = STATUS_POS;
+      char *message = msg_to_string(mesg);
+      global_send_some(client->global, message, CLIENT_STATE_NOT_ME, client);
+    }
     
   } else if(cmd_compare(command->command, "NAMES")) {
     /* Received "NAMES"*/
@@ -91,12 +99,12 @@ msg_t* msg_get(client_state_t *client) {
       msg->arg = text;
     */
     msg->arg = "NAMES test";
-    msg->status = STATUS_OK;
+    msg->status = STATUS_POS;
     msg->msg_type = MSG_TYPE_NAMES;
   } else if(cmd_compare(command->command, "SAY")) {
     /* Received "SAY"*/
     msg->arg = command->msg;
-    msg->status = STATUS_OK;
+    msg->status = STATUS_POS;
     msg->msg_type = MSG_TYPE_SAY;
   }
   return msg;

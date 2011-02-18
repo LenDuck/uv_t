@@ -45,7 +45,7 @@ typedef enum {
 } enum_status;
 
 typedef struct {
-  char *text;
+  char *arg;
   enum_status status;
   enum_msg_type msg_type;
 } msg_t;

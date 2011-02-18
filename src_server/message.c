@@ -26,15 +26,18 @@ typedef enum {
 typedef  status;
 
 typedef struct {
-  char *text;
+  char *arg;
   enum_status status;
   enum_msg_type msg_type;
 } msg_t;
 */
 
-msg_t* msg_get(con_t con) {
+msg_t* msg_get(client_state_t *client) {
   /* Set random Phineas and Ferb dude to 0 (zero)*/
   char* buffer = NULL;
+  con_t *con = client->connection;
+  client_list_t *clients = client->global->clients;
+  client_state_t *curr_client;
   
   int status = con_line(con, &buffer);
   if (status != CON_ERROR_NONE) {
@@ -47,31 +50,29 @@ msg_t* msg_get(con_t con) {
   msg_t *msg = malloc(sizeof(msg_t));
   if (cmd_compare(command->command, "CHAT")) {
     /* Received "CHAT", client auths, send "+OK" */
-    msg->text = "Authed";
+    msg->arg = "Authed";
     msg->status = STATUS_OK;
     msg->msg_type = MSG_TYPE_CHAT;
   } else if(cmd_compare(command->command, "USER")) {
     /* Received "USER", check in users_list if exists, if no match, reg.*/
-    /*
     int found = 0;
-    user_t *users_list = *FIRST_NODE*;
-    while (users_list->next) {
-      if (strcmp(users_list->data, command->msg)) {
+    while(clients) {
+      curr_client = clients->current;
+      if (strcmp(curr_client->username, command->msg)) {
         // Match in list: return neg. msg.
         found = 42;
         break;
       }
+      clients = clients->next;
     }
     msg->status = (found) ? STATUS_NOT_OK : STATUS_OK;
-    msg->msg_type (found) ? MSG_TYPE_IN_USE : MSG_TYPE_OK;            
-    msg->text = NULL;
-    */
-    msg->text = "USER test";
-    msg->status = STATUS_OK;
-    msg->msg_type = MSG_TYPE_OK;
+    msg->msg_type (found) ? MSG_TYPE_IN_USE : MSG_TYPE_OK;
+    msg->arg = NULL;
     /*
-      TODO: Send all clients RENAME msg.
+      Send all other clients RENAME msg.
     */
+    clients = client->global->clients;
+    
   } else if(cmd_compare(command->command, "NAMES")) {
     /* Received "NAMES"*/
     /*
@@ -87,14 +88,14 @@ msg_t* msg_get(con_t con) {
       }
       msg->status = STATUS_OK;
       msg->msg_type = MSG_TYPE_NAMES;
-      msg->text = text;
+      msg->arg = text;
     */
-    msg->text = "NAMES test";
+    msg->arg = "NAMES test";
     msg->status = STATUS_OK;
     msg->msg_type = MSG_TYPE_NAMES;
   } else if(cmd_compare(command->command, "SAY")) {
     /* Received "SAY"*/
-    msg->text = command->msg;
+    msg->arg = command->msg;
     msg->status = STATUS_OK;
     msg->msg_type = MSG_TYPE_SAY;
   }

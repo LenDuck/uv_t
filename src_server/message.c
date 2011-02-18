@@ -1,4 +1,9 @@
-#include <server.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "server.h"
+#include "message.h"
+
 
 /*
 typedef enum {
@@ -93,6 +98,7 @@ msg_t* msg_get(con_t con) {
     msg->status = STATUS_OK;
     msg->msg_type = MSG_TYPE_SAY;
   }
+  return msg;
 }
 
 int cmd_compare(char *a, char *b)
@@ -105,6 +111,7 @@ int cmd_compare(char *a, char *b)
   else if (x && y) { return 2; }
   else return 4;
 }
+
 cmd_t* parse_command(char *buffer) {
   int i = 0, j = 0, size1 = 32, size2 = 32;
   char *command = malloc(size1), *text = malloc(size2);
@@ -112,12 +119,12 @@ cmd_t* parse_command(char *buffer) {
   while(buffer[i]) {
     while(buffer[i] != ' ') {
       if (i < size1 - 1) {
-        command[i] = buffer[i++];
-      }
-      else {
+        command[i] = buffer[i];
+      } else {
         command = realloc(command, size1 *= 2);
-        command[i] = buffer[i++];
+        command[i] = buffer[i];
       }
+      i++;
     }
     if (j < size2 - 1) {
       char c = buffer[i++];
@@ -126,8 +133,7 @@ cmd_t* parse_command(char *buffer) {
         return NULL;
       }
       text[j++] = c;
-    }
-    else {
+    } else {
       command = realloc(text, size2 *= 2);
       char c = buffer[i++];
       if ((c < ' ') || (c == 127)) {
@@ -139,8 +145,8 @@ cmd_t* parse_command(char *buffer) {
   }
   cmd_t *rvl = malloc(sizeof(cmd_t));
   rvl->command = command;
-  rvl->text = msg;
+  rvl->msg = text;
   
-  return cmd_t;
+  return rvl;
 }
 

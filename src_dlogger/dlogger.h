@@ -12,6 +12,7 @@
 #ifndef H_DLOG
 #define H_DLOG
 
+#include <stdio.h>
 #include <pthread.h>
 
 /*

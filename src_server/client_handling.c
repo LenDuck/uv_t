@@ -10,7 +10,7 @@
 
 client_state_t client_null(void){
   client_state_t ret;
-
+  ret.state = 0;
   pthread_mutex_init(&ret.access,NULL);
   ret.current_line = NULL; 
   ret.thread_state = THREAD_STATE_DEAD;

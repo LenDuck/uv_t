@@ -3,10 +3,12 @@
 
 #include "server.h"
 #include "con.h"
+#include "message.h"
 
 client_list_t *client_list_null(void){
   client_list_t *ret = malloc(sizeof(client_list_t));
   if (!ret) return NULL;
+
   ret->next = NULL;
   ret->current = NULL;
 
@@ -15,8 +17,8 @@ client_list_t *client_list_null(void){
 
 /*0 is ok, -? is error*/
 int global_addclient(global_state_t *gs, client_state_t *cl){
-  int rva;
-  int i;
+  /*int rva;*/
+  /*int i;*/
   client_list_t *newc = NULL;
   client_list_t *cur = NULL;
 
@@ -50,7 +52,7 @@ int global_addclient(global_state_t *gs, client_state_t *cl){
 int global_delclient(global_state_t *gs, client_state_t *cl){
   int rva = 0;
   client_list_t *prev = NULL;
-  client_list_t *newc = NULL;
+  /*client_list_t *newc = NULL;*/
   client_list_t *cur = NULL;
 
   if (!(gs && cl)) return -1;
@@ -93,3 +95,22 @@ int global_send_all(global_state_t *gs,char *sendme){
   return 0;
 }
 
+int global_send_some(global_state_t *gs, char *sendme,enum_client_state mask){
+  client_list_t *cur = NULL;
+  if (!(gs && sendme)) return -1;
+  pthread_mutex_lock(&gs->access);
+  cur = gs->clients;
+  /*add error check*/
+  while (cur){
+    if (cur->current){
+      if (cur->current->state & mask){
+        con_send_line(cur->current->connection, sendme);
+      }
+    }
+    cur = cur->next;
+  }
+  
+  pthread_mutex_unlock(&gs->access);
+  return 0;
+} 
+ 

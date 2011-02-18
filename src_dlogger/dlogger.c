@@ -21,13 +21,11 @@
 
 #include "dlogger.h"
 
-/*todo: remeber using the buffer*/
-
 dlog_t * dlog_newlog_file(const char *info, const char *fname, int flags){
   dlog_t *ret = malloc(sizeof(dlog_t));
   if (!ret) return NULL;
   
-  ret->nr_events = 0;
+/*  ret->nr_events = 0;
   ret->event_size = 64;
   ret->is_cyclic = 1;
   ret->most_recent = -1;
@@ -36,6 +34,7 @@ dlog_t * dlog_newlog_file(const char *info, const char *fname, int flags){
     free(ret);
     return NULL;
   }
+*/
   pthread_mutex_init(&ret->log_mutex, NULL);
   
   ret->file_logging = 0;
@@ -51,7 +50,7 @@ dlog_t * dlog_newlog_file(const char *info, const char *fname, int flags){
   ret->fd_logger = -1;
   return ret;
 }
-
+/*
 dlog_event_t *dlog_zero_event(int textsize){
   dlog_event_t *ret = malloc(sizeof(dlog_event_t)+textsize);
   ret->text[0] = 0;
@@ -67,7 +66,7 @@ dlog_event_t * dlog_event_string(const char *text){
 void dlog_event_del(dlog_event_t * vic){
   if (vic) free(vic);
 }
-
+*/
 
 int dlog_set_filelog_fname(const char *fname, dlog_t *ll){
   FILE *x = NULL;
@@ -78,6 +77,7 @@ int dlog_set_filelog_fname(const char *fname, dlog_t *ll){
   }
   return -1;
 }
+
 int dlog_set_fdlog_fname(const char *fname, dlog_t *ll){
   int x;
   if (ll && fname && (x = open(fname, O_APPEND | O_CREAT))) {
@@ -87,6 +87,7 @@ int dlog_set_fdlog_fname(const char *fname, dlog_t *ll){
   }
   return -1;
 }
+
 int dlog_set_fdlog_int(int sockfd, dlog_t *ll){
   if (ll ) {
     ll->fd_logging = 1;
@@ -122,32 +123,29 @@ int dlog_log_raw(const void *data,int size, dlog_t *log){
 }
 
 int dlog_log_text(const char *data, dlog_t *log){
-  dlog_event_t *what = NULL;
+  
   if (!(log)) return -1;
 
   if (log->flags & (DLOG_FLAG_DISABLE)) return 0;
-  what = dlog_event_string(data);
-  if (!what) return -1;
-  
+    
   pthread_mutex_lock(&log->log_mutex);
 
   if (log->file_logging) {
     if (log->flags & (DLOG_FLAG_RAW)){
-      fwrite( what->text,strlen(what->text),1,log->file_logger);
+      fwrite( data,strlen(data),1,log->file_logger);
     } else {
-      fprintf(log->file_logger,"%s%s",what->text,((log->flags & DLOG_FLAG_NLINE)?"\n":""));
+      fprintf(log->file_logger,"%s%s",data,((log->flags & DLOG_FLAG_NLINE)?"\n":""));
     }
     if (log->flags & (DLOG_FLAG_FFLUSH)) fflush(log->file_logger);
   }
 
-
-  if (log->fd_logging) write(log->fd_logger, data, strlen(what->text));
+  if (log->fd_logging) write(log->fd_logger, data, strlen(data));
   pthread_mutex_unlock(&log->log_mutex);  
-  dlog_event_del(what);
+  
   return 0;
 }
 
-
+/*
 int dlog_log(dlog_event_t *what, dlog_t *log){
   if (!(log && what )) return -1;
   if (log->flags & (DLOG_FLAG_DISABLE)) return 0;
@@ -167,11 +165,11 @@ int dlog_log(dlog_event_t *what, dlog_t *log){
 
   return 0;
 }
-
+*/
 void dlog_close_log(dlog_t *vic){
   if (vic){
     pthread_mutex_lock(&vic->log_mutex);
-    if (vic->event) free(vic->event);/*remove insides...*/
+/*    if (vic->event) free(vic->event);remove insides...*/
     if (vic->file_logging) fclose(vic->file_logger);
     if (vic->fd_logging) close(vic->fd_logger);
     if (vic->info) free(vic->info);

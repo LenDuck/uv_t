@@ -23,8 +23,14 @@ global_state_t global_null(void){
 }
 void * global_spim(void * par){
   global_state_t *state = (global_state_t *)par;
-  while (/*insert spimming code here*/ global_send_all(state, "Want cookie? give me money!\n\r")){
-    sleep(5);
+  //int i=0;
+  while (1){
+//  printf(".%d\n",i);
+ // i++;
+    /*insert spimming code here*/
+    global_send_all(state, "Want cookie? give me money!\n\r");
+    
+    sleep(1);
   }
   return NULL;
 }
@@ -79,7 +85,7 @@ void *listen_handler(void *data){
 int main(int argc, char **argv) {
 
   global_state_t *state = NULL;
-  client_state_t *new_client = NULL;
+  /*client_state_t *new_client = NULL;*/
 
   char *hostname = "localhost";
   char *port = "55555";

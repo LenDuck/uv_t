@@ -11,6 +11,6 @@ server:
 	make -C src_server
 
 clean:
-	rm ../uv_t/bin/*
 	make -C src_client clean
 	make -C src_server clean
+	rm ../uv_t/bin/*

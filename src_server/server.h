@@ -15,6 +15,7 @@
 #define THREAD_STATE_ERROR (4)
 
 typedef struct struct_client_state{
+  int state;
   int thread_state;
   pthread_mutex_t access;
   pthread_t handler_thread;

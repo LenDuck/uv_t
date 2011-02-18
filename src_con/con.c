@@ -183,7 +183,7 @@ int con_serve_accept(con_t con, con_t *newcon){
       perror("accept");
       continue;
     }
-    printf("Got con\n");
+    /*printf("Got con\n");*/
     client = con_bootup(NULL,con->port);
     /*check nil*/
     client->sockfd = newfd;
@@ -346,7 +346,7 @@ int con_recv(con_t con, void **target,int size){
   pthread_mutex_unlock(&con->recv); 
     return rva;
   }
-  printf("rva  == %d\n",rva);
+  /*printf("rva  == %d\n",rva);*/
   if (con->raw_in) dlog_log_raw(*target,rva,con->raw_in);
   pthread_mutex_unlock(&con->recv); 
   return rva;
@@ -409,7 +409,7 @@ int con_line(con_t con, char **target){
     if (con->buffer_size == 0){
       con->buffer_size = 2048;
       con->buffer = malloc(con->buffer_size);
-      printf("alloc buffer\n");
+      /*printf("alloc buffer\n");*/
       if (!con->buffer) exit(1);
     }
     con->buffer[0] = 0;
@@ -425,7 +425,7 @@ int con_line(con_t con, char **target){
   pthread_mutex_unlock(&con->line); 
        return CON_ERROR_UNKNOWN;
     } else if (rva == 0){
-      printf("closed\n");
+      /*printf("closed\n");*/
       con->status = CON_ERROR_CLOSED;
       *target = buffer;
   pthread_mutex_unlock(&con->line); 

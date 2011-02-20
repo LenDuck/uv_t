@@ -29,30 +29,33 @@ typedef struct {
   char *arg;
   enum_status status;
   enum_msg_type msg_type;
+  enum_client_state to_whom;
 } msg_t;
 */
 
-msg_t* msg_get(client_state_t *client) {
-  /* Set random Phineas and Ferb dude to 0 (zero)*/
-  char* buffer = NULL;
-  con_t *con = client->connection;
+int msg_get(client_state_t *client) {
+  con_t *con = &client->connection;
   client_list_t *clients = client->global->clients;
   client_state_t *curr_client;
+  char *buffer = NULL;
   
-  int status = con_line(con, &buffer);
+  int status = con_line(*con, &buffer);
   if (status != CON_ERROR_NONE) {
-    printf("ERROR! No. : %d\n", status);
-    return NULL;
+    printf("ERROR! No. : %d\r\n", status);
+    return 2;
   }
-  int textsize = 128;
+  unsigned int textsize = 128;
   char *text = malloc(textsize);
+  if (!(text)) return 1;
   cmd_t *command = parse_command(buffer);
   msg_t *msg = malloc(sizeof(msg_t));
+  if (!(msg)) return 1;
   if (cmd_compare(command->command, "CHAT")) {
     /* Received "CHAT", client auths, send "+OK" */
-    msg->arg = "Authed";
+    msg->arg = "";
     msg->status = STATUS_POS;
     msg->msg_type = MSG_TYPE_CHAT;
+    msg->to_whom = CLIENT_STATE_ONLY_ME;
   } else if(cmd_compare(command->command, "USER")) {
     /* Received "USER", check in users_list if exists, if no match, reg.*/
     int found = 0;
@@ -66,48 +69,71 @@ msg_t* msg_get(client_state_t *client) {
       clients = clients->next;
     }
     msg->status = (found) ? STATUS_NEG : STATUS_POS;
-    msg->msg_type (found) ? MSG_TYPE_IN_USE : MSG_TYPE_OK;
-    msg->arg = NULL;
+    msg->msg_type = (found) ? MSG_TYPE_IN_USE : MSG_TYPE_OK;
+    msg->arg = (found) ? "Username in use" : "";
+    msg->to_whom = CLIENT_STATE_ONLY_ME;
     /*
       Send all other clients RENAME msg.
     */
     if (!(found)) {
       msg_t *mesg = malloc(sizeof(msg_t));
-      mesg->arg = malloc(strln(curr_client->username) + strln(command->msg) + 2);
-      sprintf(mesg->arg, "%s/%s\n", curr_cliet->username, command->msg);
+      mesg->arg = malloc(strlen(curr_client->username) + strlen(command->msg) + 2);
+      sprintf(mesg->arg, "%s/%s\r\n", curr_client->username, command->msg);
       mesg->msg_type = MSG_TYPE_RENAME;
       mesg->status = STATUS_POS;
-      char *message = msg_to_string(mesg);
-      global_send_some(client->global, message, CLIENT_STATE_NOT_ME, client);
+      mesg->to_whom = CLIENT_STATE_NOT_ME;
+      send_msg(mesg, client);
     }
-    
   } else if(cmd_compare(command->command, "NAMES")) {
     /* Received "NAMES"*/
-    /*
-      user_t *users_list = *FIRST_NODE*
-      while (users_list->next)
-      {
-        if (strln(text) < textsize - 2) {
-          sprintf(text, "%s\r\n", users_list->data);
-        } else {
-          text = realloc(text, textsize += 128);
-          sprintf(text, "%s\r\n", users_list->data);
-        }
+    while(clients) {
+      curr_client = clients->current;
+      if (strlen(text) < textsize - 2) {
+        sprintf(text, "%s\r\n", curr_client->username);
+      } else {
+        text = realloc(text, textsize += 128);
+        sprintf(text, "%s\r\n", curr_client->username);
       }
-      msg->status = STATUS_OK;
-      msg->msg_type = MSG_TYPE_NAMES;
-      msg->arg = text;
-    */
-    msg->arg = "NAMES test";
+      clients = clients->next;
+    }
+    msg->arg = text;
     msg->status = STATUS_POS;
     msg->msg_type = MSG_TYPE_NAMES;
+    msg->to_whom = CLIENT_STATE_ONLY_ME;
   } else if(cmd_compare(command->command, "SAY")) {
     /* Received "SAY"*/
-    msg->arg = command->msg;
+    msg->arg = malloc(strlen(command->msg) + strlen(client->username) + 4);
+    if (msg->arg) return 1;
+    sprintf(msg->arg, "%s/%s\r\n", client->username, command->msg);
     msg->status = STATUS_POS;
     msg->msg_type = MSG_TYPE_SAY;
+    msg->to_whom = CLIENT_STATE_LOGGED_IN;
   }
-  return msg;
+  send_msg(msg, client);
+  return 0;
+}
+
+void send_msg(msg_t *msg, client_state_t *client) {
+  char *text = malloc(1 + 6 + 1 + strlen(msg->arg) + 1);
+  char sign = (msg->status == STATUS_POS) ? '+' : '-';
+  char *msg_type = malloc(7);
+  if (msg->msg_type == MSG_TYPE_CHAT) {
+    msg_type = "CHAT";
+  } else if (msg->msg_type == MSG_TYPE_SAY) {
+    msg_type = "SAY";
+  } else if (msg->msg_type == MSG_TYPE_OK) {
+    msg_type = "OK";
+  } else if (msg->msg_type == MSG_TYPE_IN_USE) {
+    msg_type = "";
+  } else if (msg->msg_type == MSG_TYPE_JOIN) {
+    msg_type = "JOIN";
+  } else if (msg->msg_type == MSG_TYPE_LEAVE) {
+    msg_type = "LEAVE";
+  } else if (msg->msg_type == MSG_TYPE_RENAME) {
+    msg_type = "RENAME";
+  }
+  sprintf(text, "%c%s %s\r\n", sign, msg_type, msg->arg);
+  global_send_some(client->global, text, msg->to_whom, client);
 }
 
 int cmd_compare(char *a, char *b)

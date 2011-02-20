@@ -95,7 +95,7 @@ int global_send_all(global_state_t *gs,char *sendme){
   return 0;
 }
 
-int global_send_some(global_state_t *gs, char *sendme,enum_client_state mask client_state_t *option_whoiam) {
+int global_send_some(global_state_t *gs, char *sendme, enum_client_state mask, client_state_t *option_whoiam) {
   client_list_t *cur = NULL;
   if (!(gs && sendme)) return -1;
   pthread_mutex_lock(&gs->access);
@@ -104,14 +104,13 @@ int global_send_some(global_state_t *gs, char *sendme,enum_client_state mask cli
   while (cur){
     if (cur->current){
       if (cur->current->state & mask){
-        if (!((mask & CLIENT_STATE_NOT_ME) && (option_whoiam) && (cur->current == option_whoiam)))
+        if (!((mask & CLIENT_STATE_NOT_ME) && (option_whoiam) && (cur->current == option_whoiam))) {
           con_send_line(cur->current->connection, sendme);
         }
       }
     }
     cur = cur->next;
   }
-  
   pthread_mutex_unlock(&gs->access);
   return 0;
 } 

@@ -3,10 +3,6 @@
 #include <string.h>
 #include "server.h"
 #include "message.h"
-/* TODO: Make sure no other commands can be executed by user after CHAT and (succesfull) USER)
-(Probably just wait for second positive response in client?)
-*/
-
 /*
   Returns 0 if OK, 1 if *any* error!
 */
@@ -30,94 +26,144 @@ int msg_get(client_state_t *client) {
   msg_t *msg = malloc(sizeof(msg_t));
   if (!(msg && command && command->command)) return 1;
   if (cmd_compare(command->command, "CHAT")) {
-    /* Received "CHAT", client auths, send "+OK" */
-    msg->arg = "";
-    msg->status = STATUS_POS;
-    msg->msg_type = MSG_TYPE_CHAT;
-    msg->to_whom = CLIENT_STATE_ONLY_ME;
-  } else if(cmd_compare(command->command, "USER")) {
-    /* Received "USER", check in users_list if exists, if no match, reg.*/
-    int found = 0;
-    while(clients) {
-      curr_client = clients->current;
-      if ((curr_client) && (curr_client->username) && (cmd_compare(curr_client->username, command->msg))) {
-        // Match in list: return neg. msg.
-        found = 42;
-        break;
-      }
-      clients = clients->next;
+    if (client->state & CLIENT_STATE_CONNECTED) {
+      /* Received "CHAT", client auths, send "+OK" */
+      msg->arg = "";
+      msg->status = STATUS_POS;
+      msg->msg_type = MSG_TYPE_CHAT;
+      send_msg(msg, client);
+      client->state |= CLIENT_STATE_AUTHED;
+    } else {
+      /*send a hint to TYPO notify of this is <yodaa*/
+      con_send_line(client->connection, "typo, go elsewhere non-bot you!\r\n");
     }
-    msg->status = (found) ? STATUS_NEG : STATUS_POS;
-    msg->msg_type = (found) ? MSG_TYPE_IN_USE : MSG_TYPE_OK;
-    msg->arg = (found) ? "Username in use" : "";
-    msg->to_whom = CLIENT_STATE_ONLY_ME;
-    /*
-      Send all other clients RENAME msg.
-    */
-    if (!(found)) {
-      msg_t *mesg = malloc(sizeof(msg_t));
-      mesg->arg = malloc(strlen(curr_client->username) + strlen(command->msg) + 4);
-      sprintf(mesg->arg, "%s/%s\r\n", curr_client->username, command->msg);
-      mesg->msg_type = MSG_TYPE_RENAME;
-      mesg->status = STATUS_POS;
-      mesg->to_whom = CLIENT_STATE_NOT_ME;
-      send_msg(mesg, client);
+  } else if(cmd_compare(command->command, "USER")) {
+    if (client->state & CLIENT_STATE_AUTHED) {
+      /* Received "USER", check in users_list if exists, if no match, reg.*/
+      int found = 0;
+      while(clients) {
+	curr_client = clients->current;
+	if ((curr_client) && (curr_client->username) && (cmd_compare(curr_client->username, command->msg))) {
+	  // Match in list: return neg. msg.
+	  found = 42;
+	  break;
+	}
+	clients = clients->next;
+      }
+      msg->status = (found) ? STATUS_NEG : STATUS_POS;
+      msg->msg_type = (found) ? MSG_TYPE_IN_USE : MSG_TYPE_OK;
+      msg->arg = (found) ? "Username in use" : "";
+      /*
+	Send all other clients RENAME or JOIN msg.
+      */
+      if (!(found)) {
+	if (client->state & CLIENT_STATE_LOGGED_IN) {
+	  msg_t *mesg = malloc(sizeof(msg_t));
+	  mesg->arg = malloc(strlen(curr_client->username) + strlen(command->msg) + 4);
+	  sprintf(mesg->arg, "%s/%s\r\n", curr_client->username, command->msg);
+	  mesg->msg_type = MSG_TYPE_RENAME;
+	  mesg->status = STATUS_POS;
+	  send_msg(mesg, client);
+	} else if (client->state & CLIENT_STATE_AUTHED) { 
+	  msg_t *mesg = malloc(sizeof(msg_t));
+	  mesg->arg = malloc(strlen(curr_client->username) + strlen(command->msg) + 4);
+	  sprintf(mesg->arg, "%s\r\n", command->msg);
+	  mesg->msg_type = MSG_TYPE_JOIN;
+	  mesg->status = STATUS_POS;
+	  send_msg(mesg, client);
+	}
+      }
+      client->username = (found) ? client->username : command->msg;
+      client->state |= (found) ? client->state : CLIENT_STATE_LOGGED_IN;
+      send_msg(msg, client);
+    } else {
+      /*send a hint to TYPO notify of this is <yodaa*/
+      con_send_line(client->connection, "typo, go elsewhere non-bot you!\r\n");
     }
   } else if(cmd_compare(command->command, "NAMES")) {
     /* Received "NAMES"*/
-    while(clients) {
-      curr_client = clients->current;
-      if (strlen(text) < textsize - 2) {
-        sprintf(text, "%s\r\n", curr_client->username);
-      } else {
-        text = realloc(text, textsize += 128);
-        sprintf(text, "%s\r\n", curr_client->username);
+    if (client->state & CLIENT_STATE_LOGGED_IN) {
+      while(clients) {
+	curr_client = clients->current;
+	if (curr_client)
+	{
+	  if (curr_client->state & CLIENT_STATE_LOGGED_IN)
+	  {
+	    if (strlen(text) < textsize - 2) {
+	      sprintf(text, "%s%s\r\n", text, curr_client->username);
+	    } else {
+	      text = realloc(text, textsize += 128);
+	      sprintf(text, "%s%s\r\n", text, curr_client->username);
+	    }
+	  }
+	  clients = clients->next;
+	}
       }
-      clients = clients->next;
+      msg->arg = text;
+      msg->status = STATUS_POS;
+      msg->msg_type = MSG_TYPE_NAMES;
+      send_msg(msg, client);
+    } else {
+      /*send a hint to TYPO notify of this is <yodaa*/
+      con_send_line(client->connection, "typo, go elsewhere non-bot you!\r\n");
     }
-    msg->arg = text;
-    msg->status = STATUS_POS;
-    msg->msg_type = MSG_TYPE_NAMES;
-    msg->to_whom = CLIENT_STATE_ONLY_ME;
   } else if(cmd_compare(command->command, "SAY")) {
     /* Received "SAY"*/
-    msg->arg = malloc(strlen(command->msg) + strlen(client->username) + 4);
-    if (! msg->arg) return 1;
-    sprintf(msg->arg, "%s/%s\r\n", client->username, command->msg);
-    msg->status = STATUS_POS;
-    msg->msg_type = MSG_TYPE_SAY;
-    msg->to_whom = CLIENT_STATE_LOGGED_IN;
+    if (client->state & CLIENT_STATE_LOGGED_IN) {
+      msg->arg = malloc(strlen(command->msg) + strlen(client->username) + 4);
+      if (! msg->arg) return 1;
+      sprintf(msg->arg, "%s/%s\r\n", client->username, command->msg);
+      msg->status = STATUS_POS;
+      msg->msg_type = MSG_TYPE_SAY;
+      send_msg(msg, client);
+    } else {
+        /*send a hint to TYPO notify of this is <yodaa*/
+        con_send_line(client->connection, "typo, go elsewhere non-bot you!\r\n");
+    }
   } else {
     /*send a hint to TYPO notify of this is <yodaa*/
     con_send_line(client->connection, "typo, go elsewhere non-bot you!\r\n");
-    return 0; 
   }
   free(buffer);
-  send_msg(msg, client);
   return 0;
 }
 
 void send_msg(msg_t *msg, client_state_t *client) {
-  char *text = malloc(1 + 6 + 1 + strlen(msg->arg) + 1);
+  char *text = malloc(32 + strlen(msg->arg) + 1);
   char sign = (msg->status == STATUS_POS) ? '+' : '-';
   char *msg_type = malloc(7);
   if (msg->msg_type == MSG_TYPE_CHAT) {
     msg_type = "CHAT";
-  } else if (msg->msg_type == MSG_TYPE_SAY) {
-    msg_type = "SAY";
+    sprintf(text, "%c%s %s\r\n", sign, msg_type, msg->arg);
+    con_send_line(client->connection, text);
   } else if (msg->msg_type == MSG_TYPE_OK) {
     msg_type = "OK";
+    sprintf(text, "%c%s %s\r\n", sign, msg_type, msg->arg);
+    con_send_line(client->connection, text);
   } else if (msg->msg_type == MSG_TYPE_IN_USE) {
-    msg_type = "";
-  } else if (msg->msg_type == MSG_TYPE_JOIN) {
-    msg_type = "JOIN";
+    sprintf(text, "%c %s\r\n", sign, msg->arg);
+    con_send_line(client->connection, text);
+  } else if (msg->msg_type == MSG_TYPE_NAMES) {
+    sprintf(text, "%c\r\n%s\r\n", sign, msg->arg);
+    con_send_line(client->connection, text);
+  } else if (msg->msg_type == MSG_TYPE_SAY) {
+    msg_type = "SAY";
+    sprintf(text, "%c%s %s\r\n", sign, msg_type, msg->arg);
+    global_send_logged_in(client->global, text);
   } else if (msg->msg_type == MSG_TYPE_LEAVE) {
     msg_type = "LEAVE";
+    sprintf(text, "%c%s %s\r\n", sign, msg_type, msg->arg);
+    global_send_others(client->global, text, client);
+  } else if (msg->msg_type == MSG_TYPE_JOIN) {
+    msg_type = "JOIN";
+    sprintf(text, "%c%s %s\r\n", sign, msg_type, msg->arg);
+    global_send_others(client->global, text, client);
   } else if (msg->msg_type == MSG_TYPE_RENAME) {
     msg_type = "RENAME";
-  }
-  sprintf(text, "%c%s %s\r\n", sign, msg_type, msg->arg);
-  global_send_all(client->global, text/*, msg->to_whom, client*/);
+    sprintf(text, "%c%s %s\r\n", sign, msg_type, msg->arg);
+    global_send_others(client->global, text, client);
+  } 
+  free(text);
 }
 
 int cmd_compare(char *a, char *b)
@@ -144,7 +190,7 @@ cmd_t* parse_command(char *buffer) {
     i++;
   }
   command[i] = 0;
-  while(buffer[i]) {
+    while(buffer[i]) {
     if (j < size2 - 1) {
       char c = buffer[i];
       if (((!(c == '\r' || c == '\n')) && (c < ' ')) || (c == 127)) {

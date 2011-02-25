@@ -46,6 +46,7 @@ void *client_handler(void *input){
   if (!input) return NULL;
   init_client(input);
   printf("client_handler starting\n");
+  state->state |= CLIENT_STATE_CONNECTED;
   global_addclient(state->global,state);
   while (state->thread_state == THREAD_STATE_RUNNING){
     if (client_subrun(state) == CON_ERROR_NONE) continue;
@@ -53,6 +54,9 @@ void *client_handler(void *input){
     break;
   }
   printf("Done client %d\n",state->thread_state);
+  char *text = malloc(128);
+  sprintf(text, "+LEAVE %s", state->username);
+  global_send_others(state->global, text, state);
   global_delclient(state->global, state);
   state_client_free(state);
   return NULL;

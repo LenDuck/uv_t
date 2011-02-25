@@ -1,8 +1,37 @@
 #ifndef H_TYPES
 #define H_TYPES
 
+typedef enum {
+  CLIENT_STATE_CONNECTED = 1,
+  CLIENT_STATE_AUTHED = 2,
+  CLIENT_STATE_LOGGED_IN = 4,
+}  enum_client_state;
+
+typedef enum {
+  SERVER_STATE_CONNECTED = 1,
+  SERVER_STATE_OPEN = 2,
+  SERVER_STATE_FULL = 3
+} enum_server_state;
+
+typedef enum {
+  MSG_TYPE_CHAT,
+  MSG_TYPE_USER,
+  MSG_TYPE_NAMES,
+  MSG_TYPE_SAY,
+  MSG_TYPE_OK,
+  MSG_TYPE_IN_USE,
+  MSG_TYPE_JOIN,
+  MSG_TYPE_LEAVE,
+  MSG_TYPE_RENAME
+} enum_msg_type;
+
+typedef enum {
+  STATUS_POS,
+  STATUS_NEG
+} enum_status;
+
 typedef struct struct_client_state{
-  int state;
+  enum_client_state state;
   int thread_state;
   pthread_mutex_t access;
   pthread_t handler_thread;
@@ -33,41 +62,10 @@ typedef struct struct_global_state{
   pthread_t outgoing_thread;
 } global_state_t;
 
-typedef enum {
-  CLIENT_STATE_CONNECTED = 1,
-  CLIENT_STATE_LOGGED_IN = 2,
-  CLIENT_STATE_NOT_ME = 4,
-  CLIENT_STATE_ONLY_ME = 8
-} enum_client_state;
-
-typedef enum {
-  SERVER_STATE_CONNECTED = 1,
-  SERVER_STATE_OPEN = 2,
-  SERVER_STATE_FULL = 3
-} enum_server_state;
-
-typedef enum {
-  MSG_TYPE_CHAT,
-  MSG_TYPE_USER,
-  MSG_TYPE_NAMES,
-  MSG_TYPE_SAY,
-  MSG_TYPE_OK,
-  MSG_TYPE_IN_USE,
-  MSG_TYPE_JOIN,
-  MSG_TYPE_LEAVE,
-  MSG_TYPE_RENAME
-} enum_msg_type;
-
-typedef enum {
-  STATUS_POS,
-  STATUS_NEG
-} enum_status;
-
 typedef struct {
   char *arg;
   enum_status status;
   enum_msg_type msg_type;
-  enum_client_state to_whom;
 } msg_t;
 
 typedef struct {

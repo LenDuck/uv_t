@@ -96,23 +96,40 @@ int global_send_all(global_state_t *gs,char *sendme){
   return 0;
 }
 
-int global_send_some(global_state_t *gs, char *sendme, enum_client_state mask, client_state_t *option_whoiam) {
+int global_send_others(global_state_t *gs, char *sendme, client_state_t *whoiam) {
   client_list_t *cur = NULL;
   if (!(gs && sendme)) return -1;
   pthread_mutex_lock(&gs->access);
   cur = gs->clients;
   /*add error check*/
   while (cur){
-    if (cur->current){
-      if (cur->current->state & mask){
-        if (!((mask & CLIENT_STATE_NOT_ME) && (option_whoiam) && (cur->current == option_whoiam))) {
-          con_send_line(cur->current->connection, sendme);
-        }
+    if (cur->current) {
+      if ((cur->current != whoiam) && (cur->current->state & CLIENT_STATE_LOGGED_IN)) {
+	con_send_line(cur->current->connection, sendme);
       }
     }
     cur = cur->next;
   }
+  
   pthread_mutex_unlock(&gs->access);
   return 0;
-} 
+}
  
+int global_send_logged_in(global_state_t *gs, char *sendme) {
+  client_list_t *cur = NULL;
+  if (!(gs && sendme)) return -1;
+  pthread_mutex_lock(&gs->access);
+  cur = gs->clients;
+  /*add error check*/
+  while (cur){
+    if (cur->current) {
+      if (cur->current->state & CLIENT_STATE_LOGGED_IN) {
+	con_send_line(cur->current->connection, sendme);
+      }
+    }
+    cur = cur->next;
+  }
+  
+  pthread_mutex_unlock(&gs->access);
+  return 0;
+}

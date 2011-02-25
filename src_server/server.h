@@ -18,7 +18,8 @@ client_list_t *client_list_null(void);
 int global_addclient(global_state_t *gs,client_state_t *cl);
 int global_delclient(global_state_t *gs,client_state_t *cl);
 int global_send_all(global_state_t *gs, char *sendthis);
-int global_send_some(global_state_t *gs, char *sendthis, enum_client_state mask, client_state_t *option_whoiam);
+int global_send_others(global_state_t *gs, char *sendme, client_state_t *whoiam);
+int global_send_logged_in(global_state_t *gs, char *sendme);
 
 int client_subrun(client_state_t *state);
 void *client_handler(void *input);

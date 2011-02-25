@@ -20,5 +20,6 @@ int msg_get(client_state_t *client);
 void send_msg(msg_t*, client_state_t *client);
 int cmd_compare(char*, char*);
 cmd_t* parse_command(char*);
-
+int mask_matches(enum_client_state in, enum_client_state flags);
+int init_client(client_state_t *client);
 #endif

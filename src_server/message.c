@@ -3,43 +3,22 @@
 #include <string.h>
 #include "server.h"
 #include "message.h"
-
-
-/*
-typedef enum {
-  MSG_TYPE_CHAT,
-  MSG_TYPE_USER,
-  MSG_TYPE_NAMES,
-  MSG_TYPE_SAY,
-  MSG_TYPE_OK,
-  MSG_TYPE_IN_USE,
-  MSG_TYPE_JOIN,
-  MSG_TYPE_LEAVE,
-  MSG_TYPE_RENAME
-} enum_msg_type;
-
-typedef enum {
-  STATUS_POS,
-  STATUS_NEG
-} enum_status;
-
-typedef  status;
-
-typedef struct {
-  char *arg;
-  enum_status status;
-  enum_msg_type msg_type;
-  enum_client_state to_whom;
-} msg_t;
+/* TODO: Make sure no other commands can be executed by user after CHAT and (succesfull) USER)
+(Probably just wait for second positive response in client?)
 */
 
+/*
+  Returns 0 if OK, 1 if *any* error!
+*/
 int msg_get(client_state_t *client) {
-  con_t *con = &client->connection;
+  con_t con = client->connection;
   client_list_t *clients = client->global->clients;
   client_state_t *curr_client;
   char *buffer = NULL;
-  
-  int status = con_line(*con, &buffer);
+  //printf("sr\n");
+  int status = con_line(con, &buffer);
+  //printf("srozly: %s\n",buffer);
+  //fflush(stdout);
   if (status != CON_ERROR_NONE) {
     printf("ERROR! No. : %d\r\n", status);
     return 2;
@@ -49,7 +28,7 @@ int msg_get(client_state_t *client) {
   if (!(text)) return 1;
   cmd_t *command = parse_command(buffer);
   msg_t *msg = malloc(sizeof(msg_t));
-  if (!(msg)) return 1;
+  if (!(msg && command && command->command)) return 1;
   if (cmd_compare(command->command, "CHAT")) {
     /* Received "CHAT", client auths, send "+OK" */
     msg->arg = "";
@@ -61,7 +40,7 @@ int msg_get(client_state_t *client) {
     int found = 0;
     while(clients) {
       curr_client = clients->current;
-      if (strcmp(curr_client->username, command->msg)) {
+      if ((curr_client) && (curr_client->username) && (cmd_compare(curr_client->username, command->msg))) {
         // Match in list: return neg. msg.
         found = 42;
         break;
@@ -77,7 +56,7 @@ int msg_get(client_state_t *client) {
     */
     if (!(found)) {
       msg_t *mesg = malloc(sizeof(msg_t));
-      mesg->arg = malloc(strlen(curr_client->username) + strlen(command->msg) + 2);
+      mesg->arg = malloc(strlen(curr_client->username) + strlen(command->msg) + 4);
       sprintf(mesg->arg, "%s/%s\r\n", curr_client->username, command->msg);
       mesg->msg_type = MSG_TYPE_RENAME;
       mesg->status = STATUS_POS;
@@ -103,12 +82,17 @@ int msg_get(client_state_t *client) {
   } else if(cmd_compare(command->command, "SAY")) {
     /* Received "SAY"*/
     msg->arg = malloc(strlen(command->msg) + strlen(client->username) + 4);
-    if (msg->arg) return 1;
+    if (! msg->arg) return 1;
     sprintf(msg->arg, "%s/%s\r\n", client->username, command->msg);
     msg->status = STATUS_POS;
     msg->msg_type = MSG_TYPE_SAY;
     msg->to_whom = CLIENT_STATE_LOGGED_IN;
+  } else {
+    /*send a hint to TYPO notify of this is <yodaa*/
+    con_send_line(client->connection, "typo, go elsewhere non-bot you!\r\n");
+    return 0; 
   }
+  free(buffer);
   send_msg(msg, client);
   return 0;
 }
@@ -133,55 +117,59 @@ void send_msg(msg_t *msg, client_state_t *client) {
     msg_type = "RENAME";
   }
   sprintf(text, "%c%s %s\r\n", sign, msg_type, msg->arg);
-  global_send_some(client->global, text, msg->to_whom, client);
+  global_send_all(client->global, text/*, msg->to_whom, client*/);
 }
 
 int cmd_compare(char *a, char *b)
 {
   int x, y;
-  x = strcmp(a, b);
-  y = strcasecmp(a, b);
-  if  (!x && !y) { return 0; }
-  else if (x && !y) { return 1; }
-  else if (x && y) { return 2; }
-  else return 4;
+  x = 0 == strcmp(a, b);
+  y = 0 == strcasecmp(a, b);
+  return x + y;
 }
 
 cmd_t* parse_command(char *buffer) {
-  int i = 0, j = 0, size1 = 32, size2 = 32;
+  unsigned int i = 0, j = 0, size1 = 32, size2 = 32;
   char *command = malloc(size1), *text = malloc(size2);
   
-  while(buffer[i]) {
-    while(buffer[i] != ' ') {
-      if (i < size1 - 1) {
-        command[i] = buffer[i];
-      } else {
-        command = realloc(command, size1 *= 2);
-        command[i] = buffer[i];
-      }
-      i++;
+  while(buffer[i] && (buffer[i] != ' ') && (i < strlen(buffer))) {
+    if (i < size1 - 1) {
+      command[i] = buffer[i];
+      command[i+1] = 0;
+    } else {
+      command = realloc(command, size1 *= 2);
+      command[i] = buffer[i];
+      command[i+1] = 0;
     }
+    i++;
+  }
+  command[i] = 0;
+  while(buffer[i]) {
     if (j < size2 - 1) {
-      char c = buffer[i++];
-      if ((c < ' ') || (c == 127)) {
+      char c = buffer[i];
+      if (((!(c == '\r' || c == '\n')) && (c < ' ')) || (c == 127)) {
         printf("Error: wrong characters!\n");
         return NULL;
       }
-      text[j++] = c;
+      text[j] = c;
+      text[j+1] = 0;
     } else {
       command = realloc(text, size2 *= 2);
-      char c = buffer[i++];
-      if ((c < ' ') || (c == 127)) {
+      char c = buffer[i];
+      if (((!(c == '\r' || c == '\n')) && (c < ' ')) || (c == 127)) {
         printf("Error: wrong characters!\n");
         return NULL;
       }
-      text[j++] = c;
+      text[j] = c;
+      text[j+1] = 0;
     }
+    i++;
+    j++;
   }
+  text[j] = 0;
   cmd_t *rvl = malloc(sizeof(cmd_t));
   rvl->command = command;
   rvl->msg = text;
-  
   return rvl;
 }
 

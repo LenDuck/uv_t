@@ -21,19 +21,22 @@ global_state_t global_null(void){
   ret.outgoing_thread_state = THREAD_STATE_DEAD;
   return ret;
 }
+
+/*
 void * global_spim(void * par){
   global_state_t *state = (global_state_t *)par;
   //int i=0;
   while (1){
 //  printf(".%d\n",i);
  // i++;
-    /*insert spimming code here*/
+    //insert spimming code here
     global_send_all(state, "Want cookie? give me money!\n\r");
     
     sleep(1);
   }
   return NULL;
 }
+*/
 
 /*unsigned int sleep(unsigned int secs) */
 int listen_subrun(global_state_t *state){
@@ -112,13 +115,13 @@ int main(int argc, char **argv) {
   rva = pthread_create(&state->listen_thread, NULL, listen_handler, (void*) state);
   if (rva) perror("oops, thread");
   pthread_mutex_unlock(&state->access);
-
+/*
   {
     pthread_t spimmer ;
     rva = pthread_create(&spimmer,NULL,global_spim,(void*)state);
     
   }
-
+*/
   pthread_join(state->listen_thread,NULL);
   //con_close(state->listen_connection);
   //con_close(new_client->connection);

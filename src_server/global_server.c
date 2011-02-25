@@ -59,7 +59,7 @@ int global_delclient(global_state_t *gs, client_state_t *cl){
 
   pthread_mutex_lock(&gs->access);
   cur = gs->clients;
-  cur->next = NULL;
+  if (cur->next) cur->next = NULL;
 
   while (cur && (! (cur->current == cl)) && cur->next){
     prev = cur;
@@ -72,6 +72,7 @@ int global_delclient(global_state_t *gs, client_state_t *cl){
     } else {
       prev->next = cur->next;
     }
+    free(cur);
   } else {
     /*not found?*/
     rva = -3;

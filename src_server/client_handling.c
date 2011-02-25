@@ -17,6 +17,7 @@ client_state_t client_null(void){
   ret.connection = NULL;
   ret.log = NULL;
   ret.global = NULL;
+  ret.username = NULL;
   return ret;
 }
 
@@ -27,37 +28,13 @@ void state_client_free(client_state_t *state){
 }
 
 int client_subrun(client_state_t *state){
- char *buffer = NULL;
-  int rva = 0;
-  if ((!state->connection) ||
-      (!state->log)
+  if (!(state->connection) &&
+      (state->log)
       ) {
     state->thread_state = THREAD_STATE_ERROR;
     return CON_ERROR_UNKNOWN;
   }
-  printf("pl\n");
-  pthread_mutex_lock(&state->access);
-  printf("Pl\n");
-  rva = con_line(state->connection,
-                 &buffer);
-  printf("CL\n");
-  if (rva == CON_ERROR_NONE){
-    if (state->current_line) free(state->current_line);
-
-
-    state->current_line = buffer;
-
-    {
-      char mx[2048];
-      sprintf(mx, "Someone sent: <%s>\r\n",state->current_line); 
-      global_send_all(state->global,mx);
-      printf("s?\n");
-    }
-  } else if (rva == CON_ERROR_CLOSED){ 
-    if (state->current_line) free(state->current_line);
-    state->thread_state = THREAD_STATE_KILLNOW; 
-  }
-  pthread_mutex_unlock(&state->access);
+  if (msg_get(state)) return CON_ERROR_UNKNOWN;
   
   /*This the only place you can use state->current_line without the lock*/
   return CON_ERROR_NONE;
@@ -67,6 +44,7 @@ void *client_handler(void *input){
   client_state_t *state = (client_state_t *) input;
 
   if (!input) return NULL;
+  init_client(input);
   printf("client_handler starting\n");
   global_addclient(state->global,state);
   while (state->thread_state == THREAD_STATE_RUNNING){
@@ -80,3 +58,10 @@ void *client_handler(void *input){
   return NULL;
 }
 
+int init_client(client_state_t *client) {
+  char default_name[] = "Stinky2001";
+  client->username = malloc(1+strlen(default_name));
+  strcpy(client->username, default_name);
+  
+  return 0;
+}

@@ -19,9 +19,9 @@ int msg_get(client_state_t *client) {
   //fflush(stdout);
 
   /*Sanity check for input, len<4 is nonsense (say ,the shortest message*/
-  if (!buffer || (4 > strlen(buffer))){
+  if ( (status != CON_ERROR_NONE) || (!buffer) || (4 > strlen(buffer))){
     free(buffer);
-    return 0;/*Not an error, just some noise*/
+    return (status != CON_ERROR_NONE);/*Not an error, just some noise, closed?*/
   }
   if (status != CON_ERROR_NONE) {
     printf("ERROR! No. : %d\r\n", status);

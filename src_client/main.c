@@ -167,14 +167,14 @@ int main(int argc, char **argv) {
       printf("Username please: ");
       fflush(stdout);
       buffer[0] = 0;
-      num = fscanf(stderr,"%127[^\n]",username);
-
+      num = scanf("%127[^\n]",buffer);
 
       if (num == 1){
         username = realloc(username, 1+strlen(buffer));
         strcpy(username,buffer);
+      } else { 
+        continue;
       }
-      scanf("%127[\n]",buffer);
       send_command("USER",username);
       rva = con_line(con, &resp);
       if (rva ||(1 > strlen(resp)) || (! (resp[0] == '+'))){

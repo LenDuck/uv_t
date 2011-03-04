@@ -45,7 +45,6 @@ int say_user(const char *what){
 #define COMMAND_CHAR '/'
 void *handle_user(void* data){
   /*anti warning*/ (void)data;
-  printf("Hoi\n");
   while (con && (!error)){
     char userin[1024];
     int rva = 0;
@@ -141,7 +140,7 @@ int main(int argc, char **argv) {
     rva = sscanf(ischat,"CHAT/%d.%d/\r\n",&version,&minor);
 //    printf("%s\n",ischat);
     free(ischat);
-    if ((rva == 2) && (version == SERVER_VERSION)&&(minor >= MINOR_VERSION)){
+    if ((rva == 2) && (version >= SERVER_VERSION)&&(minor >= MINOR_VERSION)){
       /*OK*/
       printf("Connection with server alive\n");
     } else {

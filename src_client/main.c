@@ -42,7 +42,7 @@ int say_user(const char *what){
 
   return send_command("SAY",what); 
 }
-#define COMMAND_CHAR '#'
+#define COMMAND_CHAR '/'
 void *handle_user(void* data){
   /*anti warning*/ (void)data;
   printf("Hoi\n");
@@ -99,8 +99,12 @@ void *handle_user(void* data){
 }
 
 int main(int argc, char **argv) {
-  char hostname[] = "localhost";
-  char port[] = "55555";
+  char *hostname = "localhost";
+  char *port = "55555";
+  if (argc == 3) {
+    hostname = argv[1];
+    port = argv[2];
+  }
   pthread_mutex_init(&mutex_print,NULL);
   con = con_bootup(hostname,port);
   if (!con){
@@ -172,7 +176,8 @@ int main(int argc, char **argv) {
       if (num == 1){
         username = realloc(username, 1+strlen(buffer));
         strcpy(username,buffer);
-      } else { 
+      } else {
+        scanf("\n");
         continue;
       }
       send_command("USER",username);

@@ -45,7 +45,6 @@ int say_user(const char *what){
 #define COMMAND_CHAR '/'
 void *handle_user(void* data){
   /*anti warning*/ (void)data;
-  printf("Hoi\n");
   while (con && (!error)){
     char userin[1024];
     int rva = 0;
@@ -80,7 +79,7 @@ void *handle_user(void* data){
         send_command("USER",username);
       } else if ((len >= 4 ) && strncasecmp(userin+1, "help",4) == 0){
         pthread_mutex_lock(&mutex_print);
-        printf("Known commands: %c + :\n\twho\n\tme\n\tquit\n", COMMAND_CHAR); 
+        printf("Known commands: %c + :\n\twho\n\tme\n\tquit\n", COMMAND_CHAR);
         printf("\tuser\n\tconnect\n\thelp\n");
         pthread_mutex_unlock(&mutex_print);
       } else {
@@ -141,7 +140,7 @@ int main(int argc, char **argv) {
     rva = sscanf(ischat,"CHAT/%d.%d/\r\n",&version,&minor);
 //    printf("%s\n",ischat);
     free(ischat);
-    if ((rva == 2) && (version == SERVER_VERSION)&&(minor >= MINOR_VERSION)){
+    if ((rva == 2) && (version <= SERVER_VERSION)&&(minor >= MINOR_VERSION)){
       /*OK*/
       printf("Connection with server alive\n");
     } else {

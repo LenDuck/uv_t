@@ -52,7 +52,7 @@ int msg_get(client_state_t *client) {
 	if ((curr_client) && (curr_client->username) && (cmd_compare(curr_client->username, command->msg))) {
 	  // Match in list: return neg. msg.
 	  found = 42;
-	  break;
+	  break; 
 	}
 	clients = clients->next;
       }
@@ -88,22 +88,37 @@ int msg_get(client_state_t *client) {
   } else if(cmd_compare(command->command, "NAMES")) {
     /* Received "NAMES"*/
     if (client->state & CLIENT_STATE_LOGGED_IN) {
-      while(clients) {
-	curr_client = clients->current;
-	if (curr_client)
-	{
-	  if (curr_client->state & CLIENT_STATE_LOGGED_IN)
-	  {
-	    if (strlen(text) < textsize - 2) {
-	      sprintf(text, "%s%s\r\n", text, curr_client->username);
-	    } else {
-	      text = realloc(text, textsize += 128);
-	      sprintf(text, "%s%s\r\n", text, curr_client->username);
-	    }
-	  }
-	  clients = clients->next;
-	}
+      curr_client = clients->current;
+      if (curr_client)
+      {
+        if (curr_client->state & CLIENT_STATE_LOGGED_IN)
+        {
+          if (strlen(text) < textsize - 2) {
+            sprintf(text, "%s%s:\r\n", text, curr_client->username);
+          } else {
+            text = realloc(text, textsize += 128);
+            sprintf(text, "%s%s:\r\n", text, curr_client->username);
+          }
+        }
+        clients = clients->next;
       }
+      while(clients) {
+	      curr_client = clients->current;
+	      if (curr_client)
+	      {
+	        if (curr_client->state & CLIENT_STATE_LOGGED_IN)
+	        {
+	          if (strlen(text) < textsize - 2) {
+	            sprintf(text, "%s%s\r\n", text, curr_client->username);
+	          } else {
+	            text = realloc(text, textsize += 128);
+	            sprintf(text, "%s%s\r\n", text, curr_client->username);
+	          }
+	        }
+	        clients = clients->next;
+	      }
+      }
+      sprintf(text, "$s\r\n", text);
       msg->arg = text;
       msg->status = STATUS_POS;
       msg->msg_type = MSG_TYPE_NAMES;

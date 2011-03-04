@@ -55,7 +55,7 @@ void *client_handler(void *input){
   }
   printf("Done client %d\n",state->thread_state);
   char *text = malloc(128);
-  sprintf(text, "+LEAVE %s", state->username);
+  sprintf(text, "LEAVE %s\r\n", state->username);
   global_send_others(state->global, text, state);
   if (con_is_ok(state->connection)) con_close(state->connection);
   global_delclient(state->global, state);

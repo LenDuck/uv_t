@@ -41,8 +41,7 @@ int msg_get(client_state_t *client) {
       send_msg(msg, client);
       client->state |= CLIENT_STATE_AUTHED;
     } else {
-      /*send a hint to TYPO notify of this is <yodaa*/
-      con_send_line(client->connection, "typo, go elsewhere non-bot you!\r\n");
+      return -1;
     }
   } else if(cmd_compare(command->command, "USER")) {
     if (client->state & CLIENT_STATE_AUTHED) {
@@ -84,8 +83,7 @@ int msg_get(client_state_t *client) {
       client->state |= (found) ? client->state : CLIENT_STATE_LOGGED_IN;
       send_msg(msg, client);
     } else {
-      /*send a hint to TYPO notify of this is <yodaa*/
-      con_send_line(client->connection, "typo, go elsewhere non-bot you!\r\n");
+      return -1;
     }
   } else if(cmd_compare(command->command, "NAMES")) {
     /* Received "NAMES"*/
@@ -111,8 +109,7 @@ int msg_get(client_state_t *client) {
       msg->msg_type = MSG_TYPE_NAMES;
       send_msg(msg, client);
     } else {
-      /*send a hint to TYPO notify of this is <yodaa*/
-      con_send_line(client->connection, "typo, go elsewhere non-bot you!\r\n");
+      return -1;  
     }
   } else if(cmd_compare(command->command, "SAY")) {
     /* Received "SAY"*/
@@ -124,12 +121,10 @@ int msg_get(client_state_t *client) {
       msg->msg_type = MSG_TYPE_SAY;
       send_msg(msg, client);
     } else {
-        /*send a hint to TYPO notify of this is <yodaa*/
-        con_send_line(client->connection, "typo, go elsewhere non-bot you!\r\n");
+      return -1;
     }
   } else {
-    /*send a hint to TYPO notify of this is <yodaa*/
-    con_send_line(client->connection, "typo, go elsewhere non-bot you!\r\n");
+    return -1;
   }
   free(buffer);
   return 0;

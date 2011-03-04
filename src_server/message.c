@@ -150,15 +150,15 @@ void send_msg(msg_t *msg, client_state_t *client) {
     con_send_line(client->connection, text);
   } else if (msg->msg_type == MSG_TYPE_SAY) {
     msg_type = "SAY";
-    sprintf(text, "%c%s %s\r\n", sign, msg_type, msg->arg);
+    sprintf(text, "%s %s\r\n", msg_type, msg->arg);
     global_send_logged_in(client->global, text);
   } else if (msg->msg_type == MSG_TYPE_LEAVE) {
     msg_type = "LEAVE";
-    sprintf(text, "%c%s %s\r\n", sign, msg_type, msg->arg);
+    sprintf(text, "%s %s\r\n", msg_type, msg->arg);
     global_send_others(client->global, text, client);
   } else if (msg->msg_type == MSG_TYPE_JOIN) {
     msg_type = "JOIN";
-    sprintf(text, "%c%s %s\r\n", sign, msg_type, msg->arg);
+    sprintf(text, "%s %s\r\n", msg_type, msg->arg);
     global_send_others(client->global, text, client);
   } else if (msg->msg_type == MSG_TYPE_RENAME) {
     msg_type = "RENAME";

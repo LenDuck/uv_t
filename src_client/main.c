@@ -80,8 +80,8 @@ void *handle_user(void* data){
         send_command("USER",username);
       } else if ((len >= 4 ) && strncasecmp(userin+1, "help",4) == 0){
         pthread_mutex_lock(&mutex_print);
-        printf("Known commands: %c + :\n\twho\n\tme\n\tquit\n" + 
-          "\tuser\n\tconnect\n\thelp\n");
+        printf("Known commands: %c + :\n\twho\n\tme\n\tquit\n", COMMAND_CHAR);
+        printf("\tuser\n\tconnect\n\thelp\n");
         pthread_mutex_unlock(&mutex_print);
       } else {
         pthread_mutex_lock(&mutex_print);

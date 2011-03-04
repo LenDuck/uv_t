@@ -162,7 +162,7 @@ void send_msg(msg_t *msg, client_state_t *client) {
     global_send_others(client->global, text, client);
   } else if (msg->msg_type == MSG_TYPE_RENAME) {
     msg_type = "RENAME";
-    sprintf(text, "%s %s\r\n", sign, msg_type, msg->arg);
+    sprintf(text, "%s %s\r\n", msg_type, msg->arg);
     global_send_others(client->global, text, client);
   } 
   free(text);

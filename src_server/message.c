@@ -17,7 +17,8 @@ int msg_get(client_state_t *client) {
   int status = con_line(con, &buffer);
   //printf("srozly: %s\n",buffer);
   //fflush(stdout);
-
+  cmd_t *command = NULL;
+  msg_t *msg = NULL;
   /*Sanity check for input, len<4 is nonsense (say ,the shortest message*/
   if ( (status != CON_ERROR_NONE) || (!buffer) || (4 > strlen(buffer))){
     free(buffer);
@@ -28,14 +29,16 @@ int msg_get(client_state_t *client) {
     printf("ERROR! No. : %d\r\n", status);
     return 2;
   }
-  if (!(text)) return 1;
-  cmd_t *command = parse_command(buffer);
-  msg_t *msg = malloc(sizeof(msg_t));
-  if (!(msg && command && command->command)) return 1;
+  command = parse_command(buffer);
+  msg = malloc(sizeof(msg_t));
+  if (!(strcmp(command->command, " "))) return -1;
+  else if (!(msg && command && command->command)) return 1;
+
+if (!(text)) return 1;
   if (cmd_compare(command->command, "CHAT")) {
     if (client->state & CLIENT_STATE_CONNECTED) {
       /* Received "CHAT", client auths, send "+OK" */
-      msg->arg = "";
+      msg->arg = "\r\n";
       msg->status = STATUS_POS;
       msg->msg_type = MSG_TYPE_CHAT;
       send_msg(msg, client);
@@ -58,7 +61,7 @@ int msg_get(client_state_t *client) {
       }
       msg->status = (found) ? STATUS_NEG : STATUS_POS;
       msg->msg_type = (found) ? MSG_TYPE_IN_USE : MSG_TYPE_OK;
-      msg->arg = (found) ? "Username in use" : "";
+      msg->arg = (found) ? "Username in use\r\n" : "\r\n";
       /*
 	Send all other clients RENAME or JOIN msg.
       */
@@ -88,20 +91,6 @@ int msg_get(client_state_t *client) {
   } else if(cmd_compare(command->command, "NAMES")) {
     /* Received "NAMES"*/
     if (client->state & CLIENT_STATE_LOGGED_IN) {
-      curr_client = clients->current;
-      if (curr_client)
-      {
-        if (curr_client->state & CLIENT_STATE_LOGGED_IN)
-        {
-          if (strlen(text) < textsize - 2) {
-            sprintf(text, "%s%s:\r\n", text, curr_client->username);
-          } else {
-            text = realloc(text, textsize += 128);
-            sprintf(text, "%s%s:\r\n", text, curr_client->username);
-          }
-        }
-        clients = clients->next;
-      }
       while(clients) {
 	      curr_client = clients->current;
 	      if (curr_client)
@@ -118,7 +107,7 @@ int msg_get(client_state_t *client) {
 	        clients = clients->next;
 	      }
       }
-      sprintf(text, "$s\r\n", text);
+      sprintf(text, "%s\r\n", text);
       msg->arg = text;
       msg->status = STATUS_POS;
       msg->msg_type = MSG_TYPE_NAMES;
@@ -151,33 +140,33 @@ void send_msg(msg_t *msg, client_state_t *client) {
   char *msg_type = malloc(7);
   if (msg->msg_type == MSG_TYPE_CHAT) {
     msg_type = "CHAT";
-    sprintf(text, "%c%s %s\r\n", sign, msg_type, msg->arg);
+    sprintf(text, "%c%s %s", sign, msg_type, msg->arg);
     con_send_line(client->connection, text);
   } else if (msg->msg_type == MSG_TYPE_OK) {
     msg_type = "OK";
-    sprintf(text, "%c%s %s\r\n", sign, msg_type, msg->arg);
+    sprintf(text, "%c%s %s", sign, msg_type, msg->arg);
     con_send_line(client->connection, text);
   } else if (msg->msg_type == MSG_TYPE_IN_USE) {
-    sprintf(text, "%c %s\r\n", sign, msg->arg);
+    sprintf(text, "%c %s", sign, msg->arg);
     con_send_line(client->connection, text);
   } else if (msg->msg_type == MSG_TYPE_NAMES) {
-    sprintf(text, "%c\r\n%s\r\n", sign, msg->arg);
+    sprintf(text, "%cUser list follows:\r\n%s", sign, msg->arg);
     con_send_line(client->connection, text);
   } else if (msg->msg_type == MSG_TYPE_SAY) {
     msg_type = "SAY";
-    sprintf(text, "%s %s\r\n", msg_type, msg->arg);
+    sprintf(text, "%s %s", msg_type, msg->arg);
     global_send_logged_in(client->global, text);
   } else if (msg->msg_type == MSG_TYPE_LEAVE) {
     msg_type = "LEAVE";
-    sprintf(text, "%s %s\r\n", msg_type, msg->arg);
+    sprintf(text, "%s %s", msg_type, msg->arg);
     global_send_others(client->global, text, client);
   } else if (msg->msg_type == MSG_TYPE_JOIN) {
     msg_type = "JOIN";
-    sprintf(text, "%s %s\r\n", msg_type, msg->arg);
+    sprintf(text, "%s %s", msg_type, msg->arg);
     global_send_others(client->global, text, client);
   } else if (msg->msg_type == MSG_TYPE_RENAME) {
     msg_type = "RENAME";
-    sprintf(text, "%s %s\r\n", msg_type, msg->arg);
+    sprintf(text, "%s %s", msg_type, msg->arg);
     global_send_others(client->global, text, client);
   } 
   free(text);
@@ -206,22 +195,32 @@ cmd_t* parse_command(char *buffer) {
     }
     i++;
   }
-  command[i] = 0;
+  command[i++] = '\0';
     while(buffer[i]) {
     if (j < size2 - 1) {
       char c = buffer[i];
-      if (((!(c == '\r' || c == '\n')) && (c < ' ')) || (c == 127)) {
-        printf("Error: wrong characters!\n");
-        return NULL;
+      if (((!(c == '\r' || c == '\n')) && (c < ' ')) || (c == 127) ||
+        (c == ':') || (c == '/')) {
+
+        cmd_t *temp = malloc(sizeof(cmd_t));
+        temp->command = " ";
+        temp->msg = " ";
+
+        return temp;
       }
       text[j] = c;
       text[j+1] = 0;
     } else {
       command = realloc(text, size2 *= 2);
       char c = buffer[i];
-      if (((!(c == '\r' || c == '\n')) && (c < ' ')) || (c == 127)) {
-        printf("Error: wrong characters!\n");
-        return NULL;
+      if (((!(c == '\r' || c == '\n')) && (c < ' ')) || (c == 127) ||
+        (c == ':') || (c == '/')) {
+
+        cmd_t *temp = malloc(sizeof(cmd_t));
+        temp->command = " ";
+        temp->msg = " ";
+
+        return temp;
       }
       text[j] = c;
       text[j+1] = 0;

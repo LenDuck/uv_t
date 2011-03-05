@@ -34,7 +34,8 @@ int client_subrun(client_state_t *state){
     state->thread_state = THREAD_STATE_ERROR;
     return CON_ERROR_UNKNOWN;
   }
-  if (msg_get(state)) return CON_ERROR_UNKNOWN;
+  int msgget = msg_get(state);
+  if ((msgget) && (msgget != -1)) return CON_ERROR_UNKNOWN;
   
   return CON_ERROR_NONE;
 }

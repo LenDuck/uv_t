@@ -5,6 +5,7 @@
 #include <string.h>
 #include <pthread.h>
 #include "con.h"
+#include "client.h"
 
 pthread_t user_handler;
 pthread_mutex_t mutex_print;
@@ -74,6 +75,7 @@ void *handle_user(void* data){
         error = 42;/*quit*/
       } else if ((len >= 5 ) && strncasecmp(userin+1, "user ",5) == 0){
         send_command("USER",userin +6);
+        strcpy(username, (userin+6));
       } else if ((len >= 6 ) && strncasecmp(userin+1, "connect",6) == 0){
         send_command("CHAT",userin +6);
         send_command("USER",username);
@@ -205,7 +207,6 @@ int main(int argc, char **argv) {
     char *buffer = NULL;
     num++;
     rva = con_line(con,&buffer);
-
     if ((rva == CON_ERROR_NONE) &&
         buffer &&
         (strlen(buffer) > 0)
@@ -229,4 +230,3 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-

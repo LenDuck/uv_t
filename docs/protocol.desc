@@ -1,0 +1,330 @@
+                              Chat Protocol
+
+1.  Introduction
+
+1.1.  Purpose
+
+
+  This chat protocol is an application-level protocol for a server/client
+  chat system.
+
+
+1.2.  Requirements
+
+
+  The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL
+  NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and
+  "OPTIONAL" in this document are to be interpreted as described in
+  RFC 2119.
+
+  An implementation is not compliant if it fails to satisfy one or more
+  of the MUST or REQUIRED level requirements for the protocols it
+  implements. An implementation that satisfies all the MUST or REQUIRED
+  level and all the SHOULD level requirements for its protocols is said
+  to be "unconditionally compliant"; one that satisfies all the MUST
+  level requirements but not all the SHOULD level requirements for its
+  protocols is said to be "conditionally compliant."
+
+
+1.3.  Terminology
+
+
+  This specification uses a number of terms to refer to the roles
+  played by participants in the communication.
+
+  connection
+    A transport layer virtual circuit established between two programs
+    for the purpose of communication.
+                     
+  message
+    The basic unit of chat communication, consisting of a structured
+    sequence of octets matching the syntax defined in section 2 and
+    transmitted via the connection.
+
+  request
+    A request message, as defined in section 3.
+
+  response
+    A response message, as defined in section 4.
+
+  notification
+    A notification message, as defined in section 5.
+
+  client
+    A program that establishes connections for the purpose of sending
+    requests.
+
+  server
+    An application program that accepts connections in order to
+    service requests by sending back responses. Any given program may
+    be capable of being both a client and a server; our use of these
+    terms refers only to the role being performed by the program for a
+    particular connection, rather than to the program's capabilities
+    in general. 
+
+
+1.4.  Overall Operation
+
+
+  This chat protocol is stateful publish/subscribe-based message protocol.
+
+  Once joined to a server, the client can post messages to the server,
+  which the server publishes to all clients subscribed to ("joined in")
+  it.
+
+
+2.  Protocol Description
+
+2.1.  General Request Format
+
+
+  Requests are messages sent from the client to the server and take the
+  form of a single command, optionally followed by one space and
+  request-specific data.
+
+  Requests MUST be acknowledged by the server with either a positive or
+  negative response (see 2.2).
+
+  Servers receiving unknown requests from the client MUST send a
+  response with a negative status code. The description MAY optionally
+  indicate the lack of support for the received request.
+
+
+2.2.  General Response Format
+
+
+  Responses are message from the server to the client in response to
+  a request made by the client and have a generic format: they consist
+  of a positive/negative status indicator ("+" and "-", respectively),
+  optionally followed by a description. The description SHOULD be
+  ignored by the client for operation of the protocol, but MAY be
+  displayed to the user.
+
+
+2.2.1.  Multi-line Responses
+
+
+  Some responses can consist of multiple lines. If the last character
+  on the first line of any response is a colon (":", ASCII octet 58),
+  the response is a multi-line message. The message is terminated by
+  an empty line (or, two CRLF tokens).
+
+
+2.3.  General Notification Format
+
+
+  Notifications are messages from the server to the client without
+  a prior request from the client. They take the form of requests:
+  a single command with optionally a space and notification-specific
+  data.
+  
+  Clients receiving unknown notifications MUST ignore them.
+
+
+2.4.  Basic Rules
+
+
+  All of the mechanisms specified in this document are described in
+  both prose and the Backus-Naur Form (BNF) as used by RFC 822.
+  Implementors will need to be familiar with the notation in order
+  to understand this specification. Some basic tokens are defined
+  as follows:
+            
+    UserName     = 1*IDENT
+    String       = 1*IDENT
+
+    IDENT = <any CHAR except all CTL, "/" and ":">
+
+  Besides these tokens, all tokens in section 3.3 in RFC 822 apply
+  here as well.
+
+
+3.  Requests
+
+3.1.  Server Welcome
+
+
+  This message MUST be the first message sent by the server to a
+  client when a connection is established:
+
+    ServerWelcomeMessage = "CHAT" "/" Version "/" String CRLF
+    Version              = MajorVersion "." MinorVersion
+    MajorVersion         = 1*DIGIT
+    MinorVersion         = 1*DIGIT
+
+  Upon receiving the server welcome message, the client verifies the 
+  message and protocol. If the message does not properly identify the
+  server, the client SHOULD immediately disconnect from the server. If
+  the message identifies a protocol with a higher major-version number
+  than the client supports, the client SHOULD immediately disconnect.
+  If the major-version number if equal, but the minor version is larger,
+  the client MAY continue with the protocol, but MUST ignore the
+  unsupported commands.
+
+
+3.2.  Client Welcome
+
+
+  This message is sent by the client in response to the server
+  welcome message, if the client can continue.
+
+    ClientWelcomeMessage = "CHAT" CRLF
+
+  Upon receiving this message, the server will acknowledge with a
+  positive response, and the client can continue with username
+  negotiation.
+
+
+3.3.  Username Request
+
+
+  This message is sent whenever the client wishes to change its
+  username on the server. This message MUST also be sent after
+  the initial connection setup, as indicated in 3.2.
+
+    UsernameRequest = "USER" " " UserName CRLF
+
+  Upon receiving this message, the server must respond with a
+  positive or negative status, indicating the success of the
+  username change.
+
+  In the case of the initial username negotation, the client
+  MUST repeat this message (possibly with different usernames)
+  until the server replies with a positive message. If the server
+  receives any other message from the client during username
+  negotiation, it MAY close the connection.
+
+  When the server replies positive to this message during initial
+  username negotiation, the connection is now established and the
+  protocol enters its main state, where the client can make any
+  request, in any order.
+
+
+3.4.  User List Request
+
+
+  After joining the server, the client can request a list of all users
+  in the server with this message.
+
+    UserListRequest = "NAMES" CRLF
+
+  Upon receiving this message, the server SHOULD send back a list
+  of users with a user list response (see 4.1).
+
+
+3.5. Say Request
+
+
+  A client can send text to the server by sending a Client Say request.
+
+    SayRequest = "SAY" SPACE String CRLF
+  
+  The server SHOULD broadcast the client-specified string with a
+  Server Say Response (see 4.4.) to all clients joined in the server.
+  Note that this request is not explicitely acknowledged as such, but
+  does trigger a Server Say Response.
+
+
+4.  Responses
+
+4.1.  User List Response
+
+
+  The server sends this message in response to a user list request
+  (see 3.4).
+
+    UserListResponse = "+" String CRLF *(UserName CRLF) CRLF
+
+  The response is a multi-line response where, after the first line,
+  every line is the name of a user in the server.
+
+
+5.  Notifications
+
+5.1.  Say Notification
+
+
+  Whenever any client sends a Client Say request to server,
+  all clients joined in that server (including the sending client
+  itself), are sent this message.
+
+    ServerSayNotify = "SAY" SPACE Username "/" String CRLF
+
+  The message identifies the sending client, and contains the text
+  that it sent to the server.
+
+
+5.2.  Join Notification
+
+
+  Whenever a client joins a server, the server sends this
+  message to all clients in that server (except the one that
+  joined), notifying them of the joining of the new member.
+  
+    JoinNotify = "JOIN" SPACE Username
+
+  The message identifies the joining client. Note that this
+  message SHOULD be sent after the client's username has been
+  accepted.
+  
+
+5.3.  Leave Notification
+
+
+  Whenever a client disconnects from a server, the server
+  sends this message to all clients in that server (except
+  the one that left), notifying them of the leaving of the
+  member.
+  
+    LeaveNotify = "LEAVE" SPACE Username
+
+  The message identifies the leaving client.
+  
+
+5.4.  Username Change Notification
+
+
+  Whenever a client changes its username via the Username request
+  (see 3.3), the server will send out this message to all clients
+  (except the one that changed its name).
+  
+    UsernameChangeNotify = "RENAME" SPACE Username "/" Username
+    
+  The first username is the old username and the second username is
+  the new username.
+
+
+6.  Example Conversation
+
+  Listed below is an example conversation between a server and client
+  after the client connected.
+
+  SERVER> CHAT/1.0/Hello
+  CLIENT> CHAT
+  SERVER> +OK
+  CLIENT> USER JohnDoe
+  SERVER> -Username in use
+  CLIENT> USER JohnDoe2
+  SERVER> +Username OK
+  CLIENT> NAMES
+  SERVER> +User list follows:
+  SERVER> JohnDoe2
+  SERVER> Catz
+  SERVER> Sup3rBoy
+  SERVER> w00tGirlzzz
+  SERVER> 
+  CLIENT> SAY Hello everyone, John here. How are you?
+  SERVER> SAY JohnDoe2/Hello everyone, John here. How are you?
+  SERVER> SAY w00tGirlzzz/I'm great, thanks!
+  SERVER> SAY Catz/yeah me 2
+  SERVER> JOIN XtremeHL
+  SERVER> LEAVE JohnDoe2
+  SERVER> LEAVE w00tGirlzzz
+  SERVER> LEAVE Catz
+  SERVER> SAY XtremeHL/OMG u n3v3r b3li3v3 wh4t 1 s33n
+  CLIENT> USER Facepalm
+  SERVER> +Username OK
+  CLIENT> SAY ...
+  SERVER> SAY Facepalm/...
+
+  CLIENT DISCONNECTS

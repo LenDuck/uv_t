@@ -1,0 +1,48 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Telematica 2011 Practicum</title>
+</head>
+<body>
+  <h1>Telematica 2011 Practicum</h1>
+  
+  <h2>Wanneer:</h2>
+  <p>Semester 2, blok 1 (31 Jan 2011 - 4 Maa 2011):<br />
+  <p>Vrijdag 11:00 - 13:00 in G1.18</p>
+
+  <h2>Assistent:</h2>
+  <p><a href="mailto:M.Lankamp AT uva.nl">Mike Lankamp</a>.
+  
+  <h2>Practicum</h2>
+  <p>Het practicum bepaalt voor 1/3 (ong. 33%) het eindcijfer van dit vak.</p>
+  <p>Beide opdrachten moeten vóór <strong>vrijdag 4 maart, 23:59</strong> ingeleverd worden door een zip,
+     rar, of gzip'd of bzip2'd tar-file te mailen naar de assistent. De laatst ingeleverde versie
+     (vóór de deadline) telt.</p>
+  <p>Er mag in teams van maximaal twéé personen gewerkt worden.</p>
+  <p>Ingeleverd moet worden:</p>
+  <ul>
+    <li>De broncode, en eventuele ondersteunden bestanden (zoals Makefiles).</li>
+    <li>Een verslag per opdracht.</li>
+  </ul>
+  <p>De broncode moet zonder aanpassingen compilen en werken op de linux machines op de UvA, bijvoorbeeld ow150.science.uva.nl.</p>
+  <p>De opdrachten mogen in één of meer programmeertalen naar keuze gemaakt kunnen worden, met behoud van bovenstaande regel. Aangeraden talen zijn
+     C, C++, Java<sup><a href="#footnote1">1</a></sup> en Python. Wil je in een andere taal werken, mail de assistent dan even om te vragen of dat kan (de assistent moet het immers nakijken).</p>
+  <p>De opdrachten worden beoordeeld op functionaliteit, correctheid, robuustheid en leesbaarheid van de code en de kwaliteit van het verslag.</p>
+  
+  <h2>Opdracht 1:</h2>
+  <p>Opdracht: <i>Schrijf een chat server en client</i>.</p>
+  <p>In deze opdracht moet een chat server en client geïmplementeerd worden volgens een <a href="protocol.desc">vastgelegd protocol</a>, welke voor deze gelegenheid is verzonnen.</p>
+  <p>De server moet uiteraard meerdere clients tegelijk ondersteunen.</p>
+  <p>De client mag ook grafisch zijn, zolang dit werkt op bovengenoemde linux machines.</p>
+  <p>Tip: probeer eens met de client of server van een ander team te verbinden en kijk of dat werkt.</p>
+  <p>Vermeld en beargumenteer in het verslag voor deze opdracht onder andere wat voor keuzes gemaakt zijn
+     tijdens de implementatie, zoals programmeertaal, architectuur van de code en interface van de client.</p>
+  <p>Tijdens de duur van het practicum draait een referentieserver op ow150.science.uva.nl, poort 16897, waar de client mee getest kan worden.</p>
+  
+  <h2>Opdracht 2:</h2>
+  <p>Komt later...</p>
+  
+  <p><a id="footnote1"></a><sup>1</sup> Met Java kan het programma hangen als een Socket aangemaakt wordt. Dit heeft te maken met een IPv6 bug op de systemen. Voer het programma uit met -Djava.net.preferIPv4Stack=true om het probleem te omzeilen.</p>
+</body>
+</html>

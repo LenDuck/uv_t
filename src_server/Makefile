@@ -11,10 +11,10 @@ CFILES  = $(wildcard *.c)
 HFLILES = $(wildcard *.h)
 OFILES  = $(CFILES:.c=.o)
 
-CPROG = chat_client
+CPROG = chat_server
 ODIR = ../bin/
 all: $(CPROG)
-# bunny_test
+#bunny_test
 
 
 $(CPROG): $(CFILES) $(HFILES)

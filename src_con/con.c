@@ -23,7 +23,7 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <sys/select.h>
-
+#include <errno.h>
 
 #include "dlogger.h"
 #include "con.h"
@@ -107,7 +107,8 @@ int con_init_serve(con_t con, con_t *newcon){
 
   /*Prepare the connection settings thing*/
   memset(&hints, 0, sizeof(struct addrinfo));
-  hints.ai_family = AF_UNSPEC; /* ipv4/ipv6 whichever*/
+//  hints.ai_family = AF_UNSPEC; /* ipv4/ipv6 whichever*/
+  hints.ai_family = AF_INET;/*ipv4*/
   hints.ai_socktype = SOCK_STREAM; /*tcp, not udp*/
   hints.ai_flags = AI_PASSIVE;
   /*Lookup the address*/
@@ -186,7 +187,8 @@ int con_connect(con_t con){
   
   /*Prepare the connection settings thing*/
   memset(&hints, 0, sizeof(struct addrinfo));
-  hints.ai_family = AF_UNSPEC; /* ipv4/ipv6 whichever*/
+/*  hints.ai_family = AF_UNSPEC;  ipv4/ipv6 whichever*/
+  hints.ai_family = AF_INET; 
   hints.ai_socktype = SOCK_STREAM; /*tcp, not udp*/
   
   /*Lookup the address*/
@@ -228,19 +230,25 @@ int con_connect(con_t con){
 /*if size == 0, uses strlen*/
 int con_send(con_t con, void *data,int size){
   int status;
-  int flags = 0;
+  int flags = MSG_NOSIGNAL;/*No signals please*/
   
   if (! (con && data && (size > -1))) return CON_ERROR_MEMORY;
   if (size == 0) size = strlen(data);
   
   if (!con->connected) return CON_ERROR_CLOSED;
   if (con->logger) dlog_log_text("Send",con->logger);
-  if (con->raw_out) dlog_log_raw(data,size,con->logger);  
+  if (con->raw_out) dlog_log_raw(data,size,con->raw_out);  
+  errno = 0;
   status = send(con->sockfd, data,size,flags);
   if (status == -1){
     if (con->logger) dlog_log_text("Failure in sending",con->logger);
     return CON_ERROR_UNKNOWN;
   }
+  if (errno == EPIPE){
+    con->connected = 0;
+    return CON_ERROR_CLOSED;
+  }
+
   return CON_ERROR_NONE;
 }
 /*do your OWN newlines*/
@@ -260,15 +268,20 @@ int con_recv(con_t con, void **target,int *size){
   int rva = 0;
   int flags = 0;
 
-  if (!(con && target)) return CON_ERROR_MEMORY;
-  if (! con->connected) return CON_ERROR_CLOSED;
-  if (con->logger) dlog_log_text("Recv",con->logger);
+  if (!(con && target)) return -1;
+  if (! con->connected) return -1;
+  if (con->logger) dlog_log_text("Recv?",con->logger);
   if (!size){
+    if (con->logger) dlog_log_text("nosize",con->logger);
    /*Using standard size, might add print here*/
   } else {
+    if (con->logger) dlog_log_text("size",con->logger);
+
     buffersize = *size;
   }
   if (! *target){
+  if (con->logger) dlog_log_text("nobuffer",con->logger);
+
     /*allocate a big buffer*/
     buffer = malloc(buffersize);
     if (!buffer){
@@ -277,7 +290,8 @@ int con_recv(con_t con, void **target,int *size){
     }
     *target = buffer;
   }
-  
+  if (con->logger) dlog_log_text("R",con->logger);
+
   rva = recv(con->sockfd, *target, buffersize, flags);
   if (rva == 0) {
     if (con->logger) dlog_log_text("Closed the connection",con->logger);
@@ -285,6 +299,7 @@ int con_recv(con_t con, void **target,int *size){
     if (con->logger) dlog_log_text("Error in receive",con->logger);
     con->status = CON_ERROR_UNKNOWN;
   }
+  if (con->raw_in) dlog_log_raw(*target,rva,con->raw_in);
 
   return rva;
 }
@@ -304,12 +319,16 @@ int con_line(con_t con, char **target){
   if (!(con && target)) return CON_ERROR_MEMORY;
   
   if (! (con->connected || (con->buffer && (con->buffer_index > -1)))) return CON_ERROR_CLOSED;
-  if (con->logger) dlog_log_text("Recv",con->logger);
+  if (con->logger) dlog_log_text("Line",con->logger);
   while (1){
+    if (con->logger) dlog_log_text("While",con->logger);
+
     /*buffer still full?*/
     if (con->buffer && (con->buffer_index > -1) && (con->buffer_size > con->buffer_index)){
       int id = 0;
       int i;
+      if (con->logger) dlog_log_text("bw",con->logger);
+
       for (i = con->buffer_index; id < con->buffer_filled_to; i++){
         if (is_linesep(con->buffer[i])){
           /*not to append, but if buffer is filled accept as line*/
@@ -327,25 +346,42 @@ int con_line(con_t con, char **target){
           buffer[id] = 0;
         }
       }
+       if (con->logger) dlog_log_text("cb",con->logger);
+
       con->buffer_filled_to = 0;
       if (con->buffer_size == 0){
         con->buffer_size = 2048;
         con->buffer = malloc(con->buffer_size);
         if (!con->buffer) exit(1);
       }
+    }
+     if (con->logger) dlog_log_text("rc",con->logger);
+
       rva = con_recv(con,(void**) &con->buffer,&con->buffer_size);
+     if (con->logger) dlog_log_text("rc_",con->logger);
+
       if (rva < 0 ){
         con->status = CON_ERROR_UNKNOWN;
         return -1;
       } else if (rva == 0){
         con->status = CON_ERROR_CLOSED;
         *target = buffer;
-
-        return 0;
-      }
-      con->buffer_filled_to = rva;
+      return CON_ERROR_NONE;
     }
+    con->buffer_filled_to = rva;
+    if (con->logger) dlog_log_text("nw",con->logger);
+
+    
   }
+}
+
+int con_is_ok(con_t con){
+  if (! con) return 0;
+  if (! (con->status == CON_ERROR_NONE)) return 0;
+  if (! con->connected) return 0;
+
+
+  return 1;
 }
 
 int con_close(con_t con){

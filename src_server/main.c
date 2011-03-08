@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
   con_t client = NULL;
   dlog_t *mainlog = NULL;
   
-  mainlog = dlog_newlog_file("Client log", "main_client", DLOG_FLAG_FFLUSH  |DLOG_FLAG_NLINE);
+  mainlog = dlog_newlog_file("Server log", "server.log", DLOG_FLAG_FFLUSH  |DLOG_FLAG_NLINE);
 
   /*dlog_log_text("?",mainlog);*/
   dlog_log_text("Bootup start",mainlog);
@@ -30,13 +30,17 @@ int main(int argc, char **argv) {
   if (client){
     con_send_line(client,"Phasers do not include batteries,\nPhaser don't even include tangibility\n");
   }
+    int num = 0;
 
   while (client){
     char *in = NULL;
-    int rva = con_line(client,&in);
-    if (rva <= 0) break;
-    printf(">%s",in);
-    free(in);
+    int rva;
+    char buffer[128];
+    num++;
+    sprintf(buffer,"P:%d\n",num);
+    rva = con_send_line(client,buffer);
+    printf("%d>%s\n",rva,buffer);
+    if (rva) break;
   }
 
 

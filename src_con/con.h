@@ -21,6 +21,8 @@
 
 typedef struct struct_con* con_t;
 
+int con_is_ok(con_t x);
+
 con_t con_bootup(char *h,char *p);
 int con_connect(con_t con);
 int con_serve(con_t con,con_t *newcon);

@@ -3,45 +3,44 @@
 #include <unistd.h>
 
 #include <string.h>
-#include "chat.h"
+#include "con.h"
 #include "dlogger.h"
+
 int main(int argc, char **argv) {
-  char server[] = "localhost";
+  char hostname[] = "localhost";
   char port[] = "55555";
-  char *response = NULL;
-  char user[] = "duck_test";
-  chat_con_t *con = NULL;
+
+  con_t con = NULL;
+//  con_t client = NULL;
   dlog_t *mainlog = NULL;
   
-  mainlog = dlog_newlog_file("Client log", "main_client", DLOG_FLAG_FFLUSH  |DLOG_FLAG_NLINE);
+  mainlog = dlog_newlog_file("Client log","client.log", DLOG_FLAG_FFLUSH  |DLOG_FLAG_NLINE);
 
   /*dlog_log_text("?",mainlog);*/
   dlog_log_text("Bootup start",mainlog);
-  
-  /*Start a valid connection*/
-  con = chat_bootup(server,port);
-  dlog_log_text("Bootup done",mainlog);  
-  fprintf(stderr,"Going\n");
-  usleep(1000);
-
-  /*Test here*/
-  if (chat_set_user(con,user)){
-    dlog_log_text("Username denied",mainlog);  
+  con = con_bootup(hostname,port);
+  if (!con){
+    dlog_log_text("con fail",mainlog);
+    return -1;
   }
-
-  if (chat_say(con,"Quote me and be recursive")){
-    dlog_log_text("Say failed",mainlog);  
+  if (con_connect(con)){
+    dlog_log_text("connect fail",mainlog);
+    return -1;
   }
-  
-  /*Here pleaze, insert code*/
-
-  dlog_log_text("Main done, closing", mainlog);
-  /*dirc_close(con);*/
-  if (chat_quit(con)){
-    dlog_log_text("Closing failed",mainlog);  
+  if (con){
+    con_send_line(con,"Ohai There");
   }
+    int num = 0;
 
-  
+  while (con){
+    int rva;
+    char *buffer = NULL;
+    num++;
+    rva = con_line(con,&buffer);
+    printf("Got_%d: %s\n",num,buffer);
+  }
+  con_close(con);
+
   dlog_log_text("Main done, closing log",mainlog);
   dlog_close_log(mainlog);
   mainlog = NULL;

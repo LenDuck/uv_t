@@ -14,15 +14,15 @@ OFILES  = $(CFILES:.c=.o)
 CPROG = chat_client
 ODIR = ../bin/
 all: $(CPROG)
-# bunny_test
+#bunny_test
 
 
 $(CPROG): $(CFILES) $(HFILES)
 	$(CC) $(CFILES) $(CFLAGS) -c
 	$(LD) $(OFILES) $(LDFLAGS) $(LIBS) -o $(ODIR)$(CPROG)
 
-#bunny_test: $(CFILES) $(HFILES)
-#	$(BUNNY_CC) $(CFILES) $(CFLAGS) $(LIBS) -o $(ODIR)bunny_test
+bunny_$(CPROG): $(CFILES) $(HFILES)
+	$(BUNNY_CC) $(CFILES) $(CFLAGS) $(LIBS) -o $(ODIR)bunny_test
 
 clean:
 	$(RM) $(OFILES) $(ODIR)$(CPROG)

@@ -17,6 +17,8 @@ int main(int argc, char **argv){
   char *doel = (argc == 2)?(argv[1]):("translatedText");
   int status = 0;
   char word[1024*1024] = {0};
+  /*big buffer, more than google translate will return in a day...*/
+  
   int word_index = 0;
   int reading = 0;
 

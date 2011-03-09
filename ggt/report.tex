@@ -1,0 +1,98 @@
+\documentclass[a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{listings}
+\usepackage[english]{babel}
+\lstset{breaklines=true}
+\author{Leendert van Duijn\\6143997\\Robert Rinia\\0000000}
+\title{GoogleTranslateCLI}
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+\section{Goal}
+The goal we had in mind was a simple yet effective application to translate
+snippets of text using GoogleTranslate. A simple and effective tool to provide
+quick translations.
+\subsection{Features}
+In order to obtain our goal we need several features:\\
+Being able to choose the language to translate from and to\\
+Being able to read a longer text, multiline of course.
+\subsection{Interface}
+Something simple and effective, a command line interface capable of being called
+within scripts without any problems. Simply asking for all the unknown
+parameters where there is the option of pasing them as arguments to the program
+for automated translation.
+
+\section{Implementation}
+The process of getting a translation from the Google Translate service consists
+of several parts\\
+Obtain a text and languages.\\
+Form a request using this information and a key.\\
+Send the request to the google translate service.\\
+Receive a response in a fixed format.\\
+Decipher the response and return or print the result.\\
+\newline
+\subsection{Chosen structure}
+The functionality needed is implemented in several pieces, this to ease
+debugging of parts of the process and enable some adaptability. These features
+are bundled together:\\
+Getting input and forming a request.\\
+Sending the request and receiving the response using https.\\
+Parsing the output in order to obtain the result to print.\\
+\subsection{Language and libraries}
+We have chosen to use the C programming language, in combination with some smart
+use of bash/sh scripting to tie all parts together. We have opted to use a
+separate program for the network connectivity, the curl program which can
+easily be used for sending specific http requests even over a secure
+channel\footnote{https, which uses ssl}. 
+\section{Trouble}
+We had an initial problem in connecting to Google, which is due to the ssl layer
+and a missing certificate, this problem is alleviated by passing curl the
+argument telling it to accept a possibly invalid server
+certificate\footnote{Which could be a problem when dealing with sensitive
+information as the identity of the 'other' computer is not verified, but this is
+a utility to ask Google to translate something\ldots not a login page for a
+bank}. We also had some trouble concerning "bad requests" where we forgot to
+escape several characters which may not be in an URL. The Google API mentions a
+limit of 1500 characters in the URL\footnote{This could be a http imposed
+limit}, this limits our request size to about 1300 characters which could be
+improved to about 3300 character which is possible by using a POST request
+instead of the GET requests, however this changes the limit from about 1 page of
+text to 2 pages of text. So splitting is still needed when you want to translate
+any decent length of text. We have chosen to honour the GET limit and enable you
+to split your requests into acceptable chunks.
+\section{Conclusion}
+Our application is simple yet effective and in our translation tests fully
+functional, the script/frontend can be run without any parameters to be
+interactive, passed an argument --help for some guidance, or the languages to be
+used in translation. The last parameter is the file to read the input from, if
+anything other than stdin is to be used. Concerning the language choice, please
+consult google for this information as this list is out of our control. 
+
+The following calls can be made:\\
+frontend\\
+frontend --help\\
+frontend FROM\\
+frontend FROM TO\\
+frontend FROM TO SOURCEFILE\\
+\appendix
+\section{Code}
+\subsection{Frontend}
+This is the code needed to tie it all together neatly.
+\lstinputlisting[language=bash]{./frontend.sh}
+
+\subsection{Defines}
+The central place to define the request size limit.
+\lstinputlisting[language=C]{./defines.h}
+
+\subsection{Formrequest}
+This forms a valid request from asked or supplied input.
+\lstinputlisting[language=C]{./formrequest.c}
+
+\subsection{Soapscan}
+This filters its input to only show interesting data.
+\lstinputlisting[language=C]{./soapscan.c}
+
+\end{document}

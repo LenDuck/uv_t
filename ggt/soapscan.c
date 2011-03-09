@@ -8,13 +8,28 @@ int bloknaam_gelijk(char *a, char*b){
   return 0 == strcasecmp(a,b);
 }
 
+/*
+ * This scans for the following, where it prints whatever replaces the X's,
+ * Neatly ignoring anything else.
+ *
+ * "translatedText": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+ *
+ * which is the core of all valid/usefull translations given by google.
+ *
+ * This might not be a full SOAP parser but it gets the job done,
+ * although errors currently result in a blank screen, which should be 
+ * interpeted as "no valid translation, though luck"
+ *
+ * ...The code is written containing a lot of Dutch...
+ * */
 int main(int argc, char **argv){
-  int haakjes = 0;
-  int accolades = 0;
+/*  int haakjes = 0;
+  int accolades = 0;*/
   int dubbelpunt = 0;
 
   int gevonden = 0;
-  char *doel = (argc == 2)?(argv[1]):("translatedText");
+  char *doel = (argc == 2)?(argv[1]):("translatedText"); 
+
   int status = 0;
   char word[1024*1024] = {0};
   /*big buffer, more than google translate will return in a day...*/
@@ -22,10 +37,9 @@ int main(int argc, char **argv){
   int word_index = 0;
   int reading = 0;
 
-  while ( (haakjes > -1) &&
-          (accolades > -1) &&
-          (status == 0)
-      ){ /*scan a character*/
+  while ( (status == 0)){
+    
+    /*scan a character*/
     int current = getchar();
 
     if (current == EOF){
@@ -51,18 +65,18 @@ int main(int argc, char **argv){
       word[word_index++] = (char)current;
       word[word_index] = 0;
     } else if (current == '('){
-      haakjes++;
+      dubbelpunt = 0;
     } else if (current == ')'){
-      haakjes--;
+      dubbelpunt = 0;
     } else if (current == '{'){
-      accolades++;
+      dubbelpunt = 0;
     } else if (current == '}'){
-      accolades--;
+      dubbelpunt = 0;
     } else if (current == ':'){
       dubbelpunt = 1;
-    } else if ((current == '\r') ||(current == '\n')){
+    } /*else if ((current == '\r') ||(current == '\n')){
       dubbelpunt = 0;
-    }
+    }*/
   }
   return 0;
 }

@@ -37,7 +37,8 @@ int main(int argc, char **argv) {
     char *buffer = NULL;
     num++;
     rva = con_line(con,&buffer);
-    printf("Got_%d: %s\n",num,buffer);
+    printf("Got_%d,%d: %s\n",num,rva,buffer);
+    if (rva < 1) break;
   }
   con_close(con);
 

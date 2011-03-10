@@ -33,7 +33,6 @@ int main(int argc, char **argv) {
     int num = 0;
 
   while (client){
-    char *in = NULL;
     int rva;
     char buffer[128];
     num++;

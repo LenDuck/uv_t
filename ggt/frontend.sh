@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 
 #Files used for storage

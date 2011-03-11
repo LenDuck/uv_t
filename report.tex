@@ -1,0 +1,142 @@
+\documentclass[a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{listings}
+\usepackage[english]{babel}
+\lstset{breaklines=true}
+\author{Leendert van Duijn\\6143997\\Robert Rinia\\6076777}
+\title{Chat server/client}
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+\section{Goal}
+The goal for this assignment was simple: ``Make a chat server/client pair that
+supports the following:\\
+
+\begin{enumerate}
+\item \label{1}Works in accordance with the given protocol.
+\item \label{2}Runs on the UvA linux machines.
+\item \label{3}Server supports multiple clients.
+\end{enumerate}
+
+\subsection{Features}
+In order to obtain our goal we need several features:\\
+\begin{itemize}
+\item Requirement No. $2$ disables us from using MS Visual Studio, so we need
+to choose an other environment.
+\item Requirement No. $3$ needs us to work with threads.
+\end{itemize}
+
+\section{Implementation}
+\subsection{Language}
+For this assignment, we chose to work with the language C, because that's a
+language both of us are supposed to `speak' regarding the fact both of us
+received the ECs for the subject ``Programming in C'' last year.
+
+\subsection{Architecture}
+For this assignment we chose to do our own memory management (that's also a
+reason we did it in C) by treating our pointers in a smart way so that there
+are no memory leaks and such.
+
+We also made every client have its own server thread in order to reduce the
+chance of deadlock and the time a client has to wait for a server response.
+
+As a last thing for this subsection, we implemented a psuedo-object oriented
+approach for the connection (``con\_t''), which is used by both server and
+client for sending and receiving messages. It supports both bitwise (raw) and
+line-wise sending of data, though for our implementation we only used the
+line-wise variant because we knew in advance that only ASCII would be sent over
+the connection.
+\subsection{Client interface}
+We'll need an interface without any unnecessary ``features'' like GUIs or TUIs,
+because they only distract from the \emph{real} power that is automatic parsing
+and recognition of commands, even if there are made mistakes in the CaSE oF tHe
+ComMaNds.
+
+\subsection{Chosen structure}
+We have imported a connection-logger (``dlogger'') from earlier works. This
+logger supports both message based logging (using certain keywords) and raw
+data logging (for instance for logging the network communication where we used
+it for).
+
+The server threads are:
+\begin{itemize}
+\item main, this thread always runs until network problems occur.
+\item accept, this thread is used for creating new client threads and is
+referenced by the main thread when a client tries to connect.
+\item client thread, these threads (one for every \emph{connected} client)
+handle the client/server-interaction after a client has connected. They wait
+with infinite patience for their respective clients to send something so that
+we were able to test our server even without a client using netcat. Once the
+thread receives a message it might change its state and tell the main thread
+about it.
+\end{itemize}
+
+Please note the server is able to send data to all/some/one client from
+\emph{every} thread by using mutex-locks in a smart and efficient way.
+
+\section{Conclusion}
+We have made a fully working server/client couple which has shown to work even
+in our crosstests with other clients/servers.
+
+The client can be run without arguments, assuming the server is at localhost
+port 55555, or with an IP-address and a port number as arguments so it can also
+connect to other computers than the one the server is on (which is quite
+useful).
+
+The following calls can be made:
+\begin{itemize}
+\item ./chat\_client
+\item ./chat\_client IP PORT\_NUMBER
+\end{itemize}
+
+\section{Code}
+\subsection{Server}
+\subsubsection{Main}
+The ``main thread''.
+\lstinputlisting[language=C]{./src_server/main.c}
+
+\lstinputlisting[language=C]{./src_server/server.h}
+
+\subsubsection{Client handing}
+This handles the clients.
+\lstinputlisting[language=C]{./src_server/client_handling.c}
+
+\subsubsection{Global server}
+The ``accept thread''.
+\lstinputlisting[language=C]{./src_server/global_server.c}
+
+\subsubsection{Message handler}
+Parses a string into a message, handles the message, then sends a message
+(which is parsed back into a string first) according to the protocol.
+\lstinputlisting[language=C]{./src_server/message.c}
+
+\lstinputlisting[language=C]{./src_server/message.h}
+
+\subsubsection{Type definitions}
+Contains all data types used in the server.
+\lstinputlisting[language=C]{./src_server/types.h}
+
+\subsection{Client}
+\subsubsection{Main}
+The heart of the client. Does practically everything not connection-related.
+\lstinputlisting[language=C]{./src_client/main.c}
+
+\lstinputlisting[language=C]{./src_client/client.h}
+
+\subsection{Connection}
+This takes care of the connection. It is able to establish a connection, send
+and receive data and close a connection afterwards.
+\lstinputlisting[language=C]{./src_con/con.c}
+
+\lstinputlisting[language=C]{./src_con/con.h}
+
+\subsection{Logger}
+This logs almost everything that happens in the connection.
+\lstinputlisting[language=C]{./src_dlogger/dlogger.c}
+
+\lstinputlisting[language=C]{./src_dlogger/dlogger.h}
+
+\end{document}

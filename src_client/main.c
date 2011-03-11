@@ -5,7 +5,6 @@
 #include <string.h>
 #include <pthread.h>
 #include "con.h"
-#include "client.h"
 
 pthread_t user_handler;
 pthread_mutex_t mutex_print;

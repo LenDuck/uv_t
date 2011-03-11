@@ -13,12 +13,10 @@ int msg_get(client_state_t *client) {
   char *buffer = NULL;
   unsigned int textsize = 128;
   char *text = malloc(textsize);
-  //printf("sr\n");
   int status = con_line(con, &buffer);
-  //printf("srozly: %s\n",buffer);
-  //fflush(stdout);
   cmd_t *command = NULL;
   msg_t *msg = NULL;
+
   /*Sanity check for input, len<4 is nonsense (say ,the shortest message*/
   if ( (status != CON_ERROR_NONE) || (!buffer) || (4 > strlen(buffer))){
     free(buffer);
@@ -31,6 +29,7 @@ int msg_get(client_state_t *client) {
   }
   command = parse_command(buffer);
   msg = malloc(sizeof(msg_t));
+
   if (!(strcmp(command->command, " "))) return -1;
   else if (!(msg && command && command->command)) return 1;
 
@@ -142,28 +141,35 @@ void send_msg(msg_t *msg, client_state_t *client) {
     msg_type = "CHAT";
     sprintf(text, "%c%s %s", sign, msg_type, msg->arg);
     con_send_line(client->connection, text);
+
   } else if (msg->msg_type == MSG_TYPE_OK) {
     msg_type = "OK";
     sprintf(text, "%c%s %s", sign, msg_type, msg->arg);
     con_send_line(client->connection, text);
+
   } else if (msg->msg_type == MSG_TYPE_IN_USE) {
     sprintf(text, "%c %s", sign, msg->arg);
     con_send_line(client->connection, text);
+
   } else if (msg->msg_type == MSG_TYPE_NAMES) {
     sprintf(text, "%cUser list follows:\r\n%s", sign, msg->arg);
     con_send_line(client->connection, text);
+
   } else if (msg->msg_type == MSG_TYPE_SAY) {
     msg_type = "SAY";
     sprintf(text, "%s %s", msg_type, msg->arg);
     global_send_logged_in(client->global, text);
+
   } else if (msg->msg_type == MSG_TYPE_LEAVE) {
     msg_type = "LEAVE";
     sprintf(text, "%s %s", msg_type, msg->arg);
     global_send_others(client->global, text, client);
+
   } else if (msg->msg_type == MSG_TYPE_JOIN) {
     msg_type = "JOIN";
     sprintf(text, "%s %s", msg_type, msg->arg);
     global_send_others(client->global, text, client);
+
   } else if (msg->msg_type == MSG_TYPE_RENAME) {
     msg_type = "RENAME";
     sprintf(text, "%s %s", msg_type, msg->arg);
@@ -172,6 +178,10 @@ void send_msg(msg_t *msg, client_state_t *client) {
   free(text);
 }
 
+/*Compares, returning 0 on unequal,
+                      1 on equal if ignoring case,
+                      2 on really equal
+*/
 int cmd_compare(char *a, char *b)
 {
   int x, y;

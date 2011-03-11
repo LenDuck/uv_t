@@ -25,5 +25,4 @@ int client_subrun(client_state_t *state);
 void *client_handler(void *input);
 int outgoing_subrun(global_state_t *state);
 
-//void *outgoing_handler(void *data);
 #endif

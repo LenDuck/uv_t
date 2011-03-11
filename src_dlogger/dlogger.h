@@ -15,22 +15,7 @@
 #include <stdio.h>
 #include <pthread.h>
 
-/*
 typedef struct {
-  char text[1];
-} dlog_event_t;
-
-dlog_event_t * dlog_event_string(const char *text);
-void dlog_event_del(dlog_event_t * vic);
-*/
-typedef struct {
-/*  int nr_events;
-  int event_size;
-  int is_cyclic;
-  int most_recent;
-  dlog_event_t **event;
-
-*/
   pthread_mutex_t log_mutex;
   
   int file_logging;
@@ -54,15 +39,8 @@ int dlog_set_filelog_fname(const char *fname, dlog_t *log);
 int dlog_set_fdlog_fname(const char *fname, dlog_t *log);
 int dlog_set_fdlog_int(int sockfd, dlog_t *log);
 
-
-/*int dlog_log(dlog_event_t *what, dlog_t *log);*/
 int dlog_log_text(const char *info, dlog_t *log);
 int dlog_log_raw(const void *data,int size, dlog_t *log);
-/*
-dlog_event_t * dlog_event_string(const char *info);
-void dlog_event_del(dlog_event_t *t);
-dlog_event_t *dlog_zero_event(int textsize);
-*/
 
 void dlog_close_log(dlog_t *vic);
 #endif

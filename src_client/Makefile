@@ -1,5 +1,5 @@
 CC = gcc
-BUNNY_CC = bunny-gcc
+#BUNNY_CC = bunny-gcc
 LD = gcc
 
 CFLAGS = -Wall -Wextra  -ggdb  -Wstrict-prototypes
@@ -20,8 +20,8 @@ $(CPROG): $(CFILES) $(HFILES)
 	$(CC) $(CFILES) $(CFLAGS) -c
 	$(LD) $(OFILES) $(LDFLAGS) $(LIBS) -o $(ODIR)$(CPROG)
 
-bunny_$(CPROG): $(CFILES) $(HFILES)
-	$(BUNNY_CC) $(CFILES) $(CFLAGS) $(LIBS) -o $(ODIR)bunny_$(CPROG)
+#bunny_$(CPROG): $(CFILES) $(HFILES)
+#	$(BUNNY_CC) $(CFILES) $(CFLAGS) $(LIBS) -o $(ODIR)bunny_$(CPROG)
 
 clean:
 	$(RM) $(OFILES) $(ODIR)$(CPROG)

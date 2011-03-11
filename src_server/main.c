@@ -68,9 +68,7 @@ void *listen_handler(void *data){
   return NULL;
 }
 int main(int argc, char **argv) {
-
   global_state_t *state = NULL;
-  /*client_state_t *new_client = NULL;*/
 
   char *hostname = "localhost";
   char *port = "55555";
@@ -79,7 +77,6 @@ int main(int argc, char **argv) {
   state = malloc(sizeof(global_state_t));
   *state = global_null();
   
-
   state->log = dlog_newlog_file("Server log",
                                       "server.log",
                                       DLOG_FLAG_FFLUSH | DLOG_FLAG_NLINE);
@@ -90,7 +87,6 @@ int main(int argc, char **argv) {
     dlog_log_text("con fail",state->log);
     return -1;
   }
-
 
   pthread_mutex_lock(&state->access);
   state->listen_thread_state = THREAD_STATE_RUNNING;

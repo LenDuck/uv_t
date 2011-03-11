@@ -23,7 +23,7 @@ client_state_t client_null(void){
 
 void state_client_free(client_state_t *state){
   if (!state) return;
-/*leaks*/
+
   free(state);
 }
 
@@ -65,7 +65,7 @@ void *client_handler(void *input){
 }
 
 int init_client(client_state_t *client) {
-  char default_name[] = "Stinky2001";
+  char default_name[] = "Stinky2001";/*Based on Roberts IRC name*/
   client->username = malloc(1+strlen(default_name));
   strcpy(client->username, default_name);
   

@@ -108,47 +108,47 @@ The following calls can be made:
 \subsection{Server}
 \subsubsection{Main}
 The ``main thread''.
-\lstinputlisting[language=C]{./src_server/main.c}
+\lstinputlisting[language=C]{../src_server/main.c}
 
-\lstinputlisting[language=C]{./src_server/server.h}
+\lstinputlisting[language=C]{../src_server/server.h}
 
 \subsubsection{Client handing}
 This handles the clients.
-\lstinputlisting[language=C]{./src_server/client_handling.c}
+\lstinputlisting[language=C]{../src_server/client_handling.c}
 
 \subsubsection{Global server}
 The ``accept thread''.
-\lstinputlisting[language=C]{./src_server/global_server.c}
+\lstinputlisting[language=C]{../src_server/global_server.c}
 
 \subsubsection{Message handler}
 Parses a string into a message, handles the message, then sends a message
 (which is parsed back into a string first) according to the protocol.
-\lstinputlisting[language=C]{./src_server/message.c}
+\lstinputlisting[language=C]{../src_server/message.c}
 
-\lstinputlisting[language=C]{./src_server/message.h}
+\lstinputlisting[language=C]{../src_server/message.h}
 
 \subsubsection{Type definitions}
 Contains all data types used in the server.
-\lstinputlisting[language=C]{./src_server/types.h}
+\lstinputlisting[language=C]{../src_server/types.h}
 
 \subsection{Client}
 \subsubsection{Main}
 The heart of the client. Does practically everything not connection-related.
-\lstinputlisting[language=C]{./src_client/main.c}
+\lstinputlisting[language=C]{../src_client/main.c}
 
-\lstinputlisting[language=C]{./src_client/client.h}
+%\lstinputlisting[language=C]{../src_client/client.h}
 
 \subsection{Connection}
 This takes care of the connection. It is able to establish a connection, send
 and receive data and close a connection afterwards.
-\lstinputlisting[language=C]{./src_con/con.c}
+\lstinputlisting[language=C]{../src_con/con.c}
 
-\lstinputlisting[language=C]{./src_con/con.h}
+\lstinputlisting[language=C]{../src_con/con.h}
 
 \subsection{Logger}
 This logs almost everything that happens in the connection.
-\lstinputlisting[language=C]{./src_dlogger/dlogger.c}
+\lstinputlisting[language=C]{../src_dlogger/dlogger.c}
 
-\lstinputlisting[language=C]{./src_dlogger/dlogger.h}
+\lstinputlisting[language=C]{../src_dlogger/dlogger.h}
 
 \end{document}

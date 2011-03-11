@@ -41,7 +41,8 @@ int main(int argc, char **argv) {
     printf("%d>%s\n",rva,buffer);
     if (rva) break;
   }
-
+  con_close(client);
+  con_close(con);
 
   dlog_log_text("Main done, closing log",mainlog);
   dlog_close_log(mainlog);

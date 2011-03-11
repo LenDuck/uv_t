@@ -38,6 +38,7 @@ int main(int argc, char **argv) {
     num++;
     rva = con_line(con,&buffer);
     printf("Got_%d,%d: %s\n",num,rva,buffer);
+    if (buffer) free(buffer);
     if (rva == CON_ERROR_NONE ) continue;
     printf("Receive error %d\n",rva);
   }

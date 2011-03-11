@@ -47,7 +47,8 @@ dlog_t * dlog_newlog_file(const char *info, const char *fname, int flags){
   if (ret->info) strcpy(ret->info,info);
 
   ret->flags = flags;
-
+  ret->fd_logging = 0;
+  ret->fd_logger = -1;
   return ret;
 }
 

@@ -63,7 +63,9 @@ con_t con_bootup(char *h,char *p){
 
   ret = malloc(sizeof(struct struct_con));
   if (!ret) return NULL;
-  
+  ret->host = NULL;
+  ret->port = NULL;
+
   if (h){
     ret->host = malloc(1+strlen(h));
     if (!ret->host){
@@ -345,15 +347,16 @@ int con_line(con_t con, char **target){
     if (con->logger) dlog_log_text("While",con->logger);
 
     /*buffer still full?*/
-    if (con->buffer && (con->buffer_index > -1) && (con->buffer_size > con->buffer_index)){
+    if ((con->buffer_index > -1) && (con->buffer_size > con->buffer_index)){
+      
       int id = 0;
-      int i;
+      
+      if (! con->buffer) exit(2);
       if (con->logger) dlog_log_text("bw",con->logger);
 
-      for (i = con->buffer_index; id < con->buffer_filled_to; i++){
-        if (buffer && is_linesep(con->buffer[i]) && strlen(buffer)){
-          /*not to append, but if buffer is filled accept as line*/
-        
+      for (id=0;con->buffer_index < con->buffer_filled_to; con->buffer_index++){
+        if (buffer && is_linesep(con->buffer[con->buffer_index]) && strlen(buffer)){
+          /*not to append, but if buffer is filled accept as line*/ 
           *target = buffer;
           return CON_ERROR_NONE;
         } else {
@@ -362,21 +365,27 @@ int con_line(con_t con, char **target){
             buffer = realloc(buffer,bufsize );
           }
           if (!buffer) exit(1);/*fixme*/
-          buffer[id] = con->buffer[i];
+          buffer[id] = con->buffer[con->buffer_index];
           id++;
           buffer[id] = 0;
         }
+        
       }
       if (con->logger) dlog_log_text("cb",con->logger);
 
       con->buffer_filled_to = 0;
     }
-    
+    if (con->buffer_index >= con->buffer_filled_to){
+      con->buffer_index = 0;    
+      con->buffer_filled_to = 0;
+    }
     if (con->buffer_size == 0){
       con->buffer_size = 2048;
       con->buffer = malloc(con->buffer_size);
+      printf("alloc buffer\n");
       if (!con->buffer) exit(1);
     }
+    con->buffer[0] = 0;
     if (con->logger) dlog_log_text("rc",con->logger);
     rva = con_recv(con,(void**) &con->buffer,con->buffer_size);
     if (con->logger) dlog_log_text("rc_",con->logger);
@@ -385,6 +394,7 @@ int con_line(con_t con, char **target){
       con->status = CON_ERROR_UNKNOWN;
       return CON_ERROR_UNKNOWN;
     } else if (rva == 0){
+      printf("closed\n");
       con->status = CON_ERROR_CLOSED;
       *target = buffer;
       return CON_ERROR_NONE;

@@ -325,7 +325,9 @@ int con_recv(con_t con, void **target,int size){
     perror("err, recv");
     if (con->logger) dlog_log_text("Error in receive",con->logger);
     con->status = CON_ERROR_UNKNOWN;
+    return rva;
   }
+  printf("rva  == %d\n",rva);
   if (con->raw_in) dlog_log_raw(*target,rva,con->raw_in);
 
   return rva;

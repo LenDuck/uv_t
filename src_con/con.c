@@ -329,7 +329,6 @@ int con_recv(con_t con, void **target,int size){
     }
     *target = buffer;
   }
-  if (con->logger) dlog_log_text("R",con->logger);
 
   rva = recv(con->sockfd, *target, size, flags);
   if (rva == 0) {
@@ -374,7 +373,6 @@ int con_line(con_t con, char **target){
   pthread_mutex_lock(&con->line); 
   if (con->logger) dlog_log_text("Line",con->logger);
   while (1){
-    if (con->logger) dlog_log_text("While",con->logger);
 
     /*buffer still full?*/
     if ((con->buffer_index > -1) && (con->buffer_size > con->buffer_index)){
@@ -382,8 +380,7 @@ int con_line(con_t con, char **target){
       int id = 0;
       
       if (! con->buffer) exit(2);
-      if (con->logger) dlog_log_text("bw",con->logger);
-
+    
       for (id=0;con->buffer_index < con->buffer_filled_to; con->buffer_index++){
         /*buffer exists, endofline found, buffer lenght != 0*/
         if (!buffer){
@@ -412,7 +409,6 @@ int con_line(con_t con, char **target){
         }
         
       }
-      if (con->logger) dlog_log_text("cb",con->logger);
 
       con->buffer_filled_to = 0;
     }
@@ -427,9 +423,7 @@ int con_line(con_t con, char **target){
       if (!con->buffer) exit(1);
     }
     con->buffer[0] = 0;
-    if (con->logger) dlog_log_text("rc",con->logger);
     rva = con_recv(con,(void**) &con->buffer,con->buffer_size);
-    if (con->logger) dlog_log_text("rc_",con->logger);
 
     if (rva < 0 ){
       perror("rvalow");
@@ -446,7 +440,6 @@ int con_line(con_t con, char **target){
       return CON_ERROR_CLOSED;
     }
     con->buffer_filled_to = rva;
-    if (con->logger) dlog_log_text("nw",con->logger); 
   }
 }
 

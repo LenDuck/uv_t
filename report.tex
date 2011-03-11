@@ -31,9 +31,10 @@ to choose an other environment.
 
 \section{Implementation}
 \subsection{Language}
-For this assignment, we chose to work with the language C, because that's a
-language both of us are supposed to `speak' regarding the fact both of us
-received the ECs for the subject ``Programming in C'' last year.
+For this assignment, we chose to work with the language C, because that
+language doesn't require the user to type a lot of `useless' keywords, it has
+less overhead and it supports everything we thought to be needing `out of the
+box'.
 
 \subsection{Architecture}
 For this assignment we chose to do our own memory management (that's also a
@@ -43,7 +44,7 @@ are no memory leaks and such.
 We also made every client have its own server thread in order to reduce the
 chance of deadlock and the time a client has to wait for a server response.
 
-As a last thing for this subsection, we implemented a psuedo-object oriented
+As a last thing for this subsection, we implemented a pseudo-object oriented
 approach for the connection (``con\_t''), which is used by both server and
 client for sending and receiving messages. It supports both bitwise (raw) and
 line-wise sending of data, though for our implementation we only used the

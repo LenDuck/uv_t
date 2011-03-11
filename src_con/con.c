@@ -322,6 +322,7 @@ int con_recv(con_t con, void **target,int size){
     printf("buffer %p\n",(void*)*target);
     if (con->logger) dlog_log_text("Closed the connection",con->logger);
   } else if (rva == -1){
+    perror("err, recv");
     if (con->logger) dlog_log_text("Error in receive",con->logger);
     con->status = CON_ERROR_UNKNOWN;
   }
@@ -394,8 +395,11 @@ int con_line(con_t con, char **target){
     if (con->logger) dlog_log_text("rc_",con->logger);
 
     if (rva < 0 ){
+      perror("rvalow");
+
       con->status = CON_ERROR_UNKNOWN;
-      return CON_ERROR_UNKNOWN;
+       printf("err: %p:%p: %d",(void*)con,(void*)con->buffer,con->buffer_size);
+       return CON_ERROR_UNKNOWN;
     } else if (rva == 0){
       printf("closed\n");
       con->status = CON_ERROR_CLOSED;

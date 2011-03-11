@@ -66,12 +66,12 @@ void *client_handler(void *input){
   while (state->thread_state == THREAD_STATE_RUNNING){
     char *buffer = NULL;
     int rva = 0;
-    if ((!state->connection) ||
+    /*if ((!state->connection) ||
         (!state->log)
         ) {
       state->thread_state = THREAD_STATE_ERROR;
       continue;
-    }
+    }*/
     pthread_mutex_lock(&state->access);
     rva = con_line(state->connection,
                    &buffer);
@@ -82,8 +82,10 @@ void *client_handler(void *input){
     pthread_mutex_unlock(&state->access);
   
     printf("%s",buffer);
+    printf("State:%d\n",state->thread_state);
     /*This the only place you can use state->current_line without the lock*/
   }
+  printf("Done client\n");
   return NULL;
 }
 

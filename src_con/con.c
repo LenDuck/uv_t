@@ -100,7 +100,7 @@ con_t con_bootup(char *h,char *p){
   return ret;
 }
 
-int con_init_serve(con_t con, con_t *newcon){
+int con_init_serve(con_t con){
   
   struct addrinfo hints,*servinfo, *p;
   int yes = 1;
@@ -131,7 +131,7 @@ int con_init_serve(con_t con, con_t *newcon){
     }
     
     if (setsockopt(con->sockfd, SOL_SOCKET, SO_REUSEADDR ,&yes,sizeof(int)) == -1){
-      perror("pockopt");
+      perror("sockopt");
       return -1;
     }
     
@@ -156,7 +156,7 @@ int con_init_serve(con_t con, con_t *newcon){
   }
 
   con->connected = CON_LISTENING;
-  return con_serve_accept(con,newcon);
+  return CON_ERROR_NONE;
 }
 /*Accept a single connection, blocking until one is obtained*/
 int con_serve_accept(con_t con, con_t *newcon){
@@ -190,7 +190,10 @@ int con_serve(con_t con, con_t *newcon){
 
   
   if (con->connected == CON_DISCONNECTED){
-    return con_init_serve(con,newcon);
+    int err = con_init_serve(con);
+    if (! (err == CON_ERROR_NONE)) return err;
+    return con_serve_accept(con,newcon);
+
   }
   
   if (con->connected == CON_LISTENING){
@@ -397,7 +400,7 @@ int con_line(con_t con, char **target){
       printf("closed\n");
       con->status = CON_ERROR_CLOSED;
       *target = buffer;
-      return CON_ERROR_NONE;
+      return CON_ERROR_CLOSED;
     }
     con->buffer_filled_to = rva;
     if (con->logger) dlog_log_text("nw",con->logger); 

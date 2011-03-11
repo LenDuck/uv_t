@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
     if (buffer) free(buffer);
     if (rva == CON_ERROR_NONE ) continue;
     printf("Receive error %d\n",rva);
+    break;
   }
   con_close(con);
 

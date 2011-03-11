@@ -4,8 +4,7 @@ LD = gcc
 
 CFLAGS = -Wall -Wextra  -ggdb  -Wstrict-prototypes
 LDFLAGS= 
-LIBS   = 
-#-lpthread
+LIBS   = -lpthread
 
 CFILES  = $(wildcard *.c)
 HFLILES = $(wildcard *.h)

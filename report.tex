@@ -26,7 +26,7 @@ In order to obtain our goal we need several features:\\
 \begin{itemize}
 \item Requirement No. $2$ disables us from using MS Visual Studio, so we need
 to choose an other environment.
-\item Requirement No. $3$ needs us to work with threads.
+\item Requirement No. $3$ is achievable by using threads.
 \end{itemize}
 
 \section{Implementation}
@@ -44,9 +44,9 @@ are no memory leaks and such.
 We also made every client have its own server thread in order to reduce the
 chance of deadlock and the time a client has to wait for a server response.
 
-As a last thing for this subsection, we implemented a pseudo-object oriented
-approach for the connection (``con\_t''), which is used by both server and
-client for sending and receiving messages. It supports both bitwise (raw) and
+We have used an Object oriented approach for some things, most notably the
+connection code (con\_t) which is used in both our client and server for sending
+and receiving messages. It supports both bitwise (raw) and
 line-wise sending of data, though for our implementation we only used the
 line-wise variant because we knew in advance that only ASCII would be sent over
 the connection.
@@ -57,11 +57,6 @@ and recognition of commands, even if there are made mistakes in the CaSE oF tHe
 ComMaNds.
 
 \subsection{Chosen structure}
-We have imported a connection-logger (``dlogger'') from earlier works. This
-logger supports both message based logging (using certain keywords) and raw
-data logging (for instance for logging the network communication where we used
-it for).
-
 The server threads are:
 \begin{itemize}
 \item main, this thread always runs until network problems occur.
@@ -78,6 +73,21 @@ about it.
 Please note the server is able to send data to all/some/one client from
 \emph{every} thread by using mutex-locks in a smart and efficient way.
 
+Here follows a list of our files and what they do:
+\begin{itemize}
+\item `./src_server/main.c' : the main server thread.
+\item `./src_server/global_server.c' : the accept thread.
+\item `./src_server/client_handling.c' : the per-client thread.
+\item `./src_server/message.c' : the message handling thread.
+
+\item `./src_client/main.c' : contains almost everything used in the client,
+except connection-related things..
+
+\item `./src_con/con.c' : handles everything connection-related.
+
+\item `./src_dlogger/dlogger.c' : the logger.
+\end{itemize}
+
 \section{Conclusion}
 We have made a fully working server/client couple which has shown to work even
 in our crosstests with other clients/servers.
@@ -93,6 +103,7 @@ The following calls can be made:
 \item ./chat\_client IP PORT\_NUMBER
 \end{itemize}
 
+\appendix
 \section{Code}
 \subsection{Server}
 \subsubsection{Main}

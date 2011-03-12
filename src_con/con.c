@@ -14,7 +14,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-
+#include <pthread.h>
 
 #include <netdb.h>
 #include <sys/types.h>
@@ -32,6 +32,10 @@ struct struct_con{
   int connected;
   int status;
 
+  pthread_mutex_t edit;
+  pthread_mutex_t send;
+  pthread_mutex_t recv;
+  pthread_mutex_t line;
   dlog_t *logger;
   dlog_t *raw_in;
   dlog_t *raw_out;
@@ -97,6 +101,10 @@ con_t con_bootup(char *h,char *p){
   
   ret->connected = CON_DISCONNECTED;
   
+  pthread_mutex_init(&ret->edit,NULL);
+  pthread_mutex_init(&ret->send,NULL);
+  pthread_mutex_init(&ret->recv,NULL);
+  pthread_mutex_init(&ret->line,NULL);
   return ret;
 }
 
@@ -109,7 +117,7 @@ int con_init_serve(con_t con){
 
   if (!con) return CON_ERROR_MEMORY;
   if (! (con->connected == CON_DISCONNECTED)) return CON_ERROR_CLOSED;
-
+  pthread_mutex_lock(&con->edit);
   /*Prepare the connection settings thing*/
   memset(&hints, 0, sizeof(struct addrinfo));
 //  hints.ai_family = AF_UNSPEC; /* ipv4/ipv6 whichever*/
@@ -132,6 +140,7 @@ int con_init_serve(con_t con){
     
     if (setsockopt(con->sockfd, SOL_SOCKET, SO_REUSEADDR ,&yes,sizeof(int)) == -1){
       perror("sockopt");
+      pthread_mutex_unlock(&con->edit);
       return -1;
     }
     
@@ -147,6 +156,7 @@ int con_init_serve(con_t con){
   if (p == NULL){
     perror("bind failed");
 /*fixme, memory loss*/
+    pthread_mutex_unlock(&con->edit);
     return CON_ERROR_MEMORY;
   }
   freeaddrinfo(servinfo);
@@ -156,12 +166,14 @@ int con_init_serve(con_t con){
   }
 
   con->connected = CON_LISTENING;
+  pthread_mutex_unlock(&con->edit);
   return CON_ERROR_NONE;
 }
 /*Accept a single connection, blocking until one is obtained*/
 int con_serve_accept(con_t con, con_t *newcon){
   if ((!con) || (!newcon)) return CON_ERROR_MEMORY;
   if (! (con->connected == CON_LISTENING)) return CON_ERROR_CLOSED;
+  pthread_mutex_lock(&con->edit);
   while (1){
     con_t client = NULL;
     struct sockaddr_storage client_addr;
@@ -177,7 +189,7 @@ int con_serve_accept(con_t con, con_t *newcon){
     client->sockfd = newfd;
     client->connected = 1;
     *newcon = client;
-  
+   pthread_mutex_unlock(&con->edit); 
     return CON_ERROR_NONE;
   }
 
@@ -260,6 +272,7 @@ int con_send(con_t con, void *data,int size){
   if (size == 0) size = strlen(data);
   
   if (!con->connected) return CON_ERROR_CLOSED;
+  pthread_mutex_lock(&con->send);
   if (con->logger) dlog_log_text("Send",con->logger);
   if (con->raw_out) dlog_log_raw(data,size,con->raw_out);  
   errno = 0;
@@ -267,13 +280,15 @@ int con_send(con_t con, void *data,int size){
   if (status == -1){
     perror("sendfail");
     if (con->logger) dlog_log_text("Failure in sending",con->logger);
+    pthread_mutex_unlock(&con->send);
     return CON_ERROR_UNKNOWN;
   }
   if (errno == EPIPE){
     con->connected = 0;
+    pthread_mutex_unlock(&con->send);
     return CON_ERROR_CLOSED;
   }
-
+  pthread_mutex_unlock(&con->send);
   return CON_ERROR_NONE;
 }
 /*do your OWN newlines*/
@@ -295,6 +310,7 @@ int con_recv(con_t con, void **target,int size){
 
   if (!(con && target)) return -1;
   if (! con->connected) return -1;
+  pthread_mutex_lock(&con->recv); 
   if (con->logger) dlog_log_text("Recv?",con->logger);
   if (!size){
     if (con->logger) dlog_log_text("nosize",con->logger);
@@ -308,6 +324,7 @@ int con_recv(con_t con, void **target,int size){
     buffer = malloc(size);
     if (!buffer){
       if (con->logger) dlog_log_text("Buffer error",con->logger);
+  pthread_mutex_unlock(&con->recv); 
       return -1;
     }
     *target = buffer;
@@ -323,13 +340,15 @@ int con_recv(con_t con, void **target,int size){
     if (con->logger) dlog_log_text("Closed the connection",con->logger);
   } else if (rva == -1){
     perror("err, recv");
-    if (con->logger) dlog_log_text("Error in receive",con->logger);
+     printf("data %p,%d,%d\n",(void*)target,buffersize,flags); 
+     if (con->logger) dlog_log_text("Error in receive",con->logger);
     con->status = CON_ERROR_UNKNOWN;
+  pthread_mutex_unlock(&con->recv); 
     return rva;
   }
   printf("rva  == %d\n",rva);
   if (con->raw_in) dlog_log_raw(*target,rva,con->raw_in);
-
+  pthread_mutex_unlock(&con->recv); 
   return rva;
 }
 
@@ -348,6 +367,7 @@ int con_line(con_t con, char **target){
   if (!(con && target)) return CON_ERROR_MEMORY;
   
   if (! (con->connected || (con->buffer && (con->buffer_index > -1)))) return CON_ERROR_CLOSED;
+  pthread_mutex_lock(&con->line); 
   if (con->logger) dlog_log_text("Line",con->logger);
   while (1){
     if (con->logger) dlog_log_text("While",con->logger);
@@ -364,6 +384,7 @@ int con_line(con_t con, char **target){
         if (buffer && is_linesep(con->buffer[con->buffer_index]) && strlen(buffer)){
           /*not to append, but if buffer is filled accept as line*/ 
           *target = buffer;
+  pthread_mutex_unlock(&con->line); 
           return CON_ERROR_NONE;
         } else {
           if (bufsize <= (id +1 )) {
@@ -401,11 +422,13 @@ int con_line(con_t con, char **target){
 
       con->status = CON_ERROR_UNKNOWN;
        printf("err: %p:%p: %d",(void*)con,(void*)con->buffer,con->buffer_size);
+  pthread_mutex_unlock(&con->line); 
        return CON_ERROR_UNKNOWN;
     } else if (rva == 0){
       printf("closed\n");
       con->status = CON_ERROR_CLOSED;
       *target = buffer;
+  pthread_mutex_unlock(&con->line); 
       return CON_ERROR_CLOSED;
     }
     con->buffer_filled_to = rva;
@@ -424,7 +447,7 @@ int con_is_ok(con_t con){
 
 int con_close(con_t con){
   if (!(con) ) return CON_ERROR_MEMORY;
-  
+    pthread_mutex_lock(&con->edit); 
   if ( con->connected ) close(con->sockfd);
   if (con->logger) dlog_log_text("Closing",con->logger);
   if (con->raw_in) dlog_close_log(con->raw_in);

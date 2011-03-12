@@ -31,8 +31,10 @@ typedef struct struct_global_state{
   int users_online;
   con_t listen_connection;
   dlog_t *log;
-  int thread_state;
+  int listen_thread_state;
+  int outgoing_thread_state;
   pthread_t listen_thread;
+  pthread_t outgoing_thread;
 } global_state_t;
 
 client_state_t client_null(void){
@@ -53,42 +55,67 @@ global_state_t global_null(void){
   ret.users_online = 0;
   ret.listen_connection = NULL;
   ret.log = NULL;
-  ret.thread_state = THREAD_STATE_DEAD;
-
+  ret.listen_thread_state = THREAD_STATE_DEAD;
+  ret.outgoing_thread_state = THREAD_STATE_DEAD;
   return ret;
 }
+int client_subrun(client_state_t *state){
+ char *buffer = NULL;
+  int rva = 0;
+  if ((!state->connection) ||
+      (!state->log)
+      ) {
+    state->thread_state = THREAD_STATE_ERROR;
+    return CON_ERROR_UNKNOWN;
+  }
+  pthread_mutex_lock(&state->access);
+  rva = con_line(state->connection,
+                 &buffer);
+  if (rva == CON_ERROR_NONE){
+    if (state->current_line) free(state->current_line);
+    state->current_line = buffer;
+  } else if (rva == CON_ERROR_CLOSED){ 
+    state->thread_state = THREAD_STATE_KILLNOW; 
+  }
+  pthread_mutex_unlock(&state->access);
 
+  printf("%s",buffer);
+  printf("State:%d\n",state->thread_state);
+  /*This the only place you can use state->current_line without the lock*/
+  return CON_ERROR_NONE;
+}
 void *client_handler(void *input){
   client_state_t *state = (client_state_t *) input;
 
   if (!input) return NULL;
-  
+  printf("client_handler starting\n");
   while (state->thread_state == THREAD_STATE_RUNNING){
-    char *buffer = NULL;
-    int rva = 0;
-    /*if ((!state->connection) ||
-        (!state->log)
-        ) {
-      state->thread_state = THREAD_STATE_ERROR;
-      continue;
-    }*/
-    pthread_mutex_lock(&state->access);
-    rva = con_line(state->connection,
-                   &buffer);
-    if (rva == CON_ERROR_NONE){
-      if (state->current_line) free(state->current_line);
-      state->current_line = buffer;
-    }
-    pthread_mutex_unlock(&state->access);
-  
-    printf("%s",buffer);
-    printf("State:%d\n",state->thread_state);
-    /*This the only place you can use state->current_line without the lock*/
+    if (client_subrun(state) == CON_ERROR_NONE) continue;
+    printf("Client break\n");
+    break;
   }
-  printf("Done client\n");
+  printf("Done client %d\n",state->thread_state);
   return NULL;
 }
+int outgoing_subrun(global_state_t *state){
+  int i=0;
+  if (!state) return CON_ERROR_UNKNOWN;
 
+  /*insert spimming code here*/
+  return CON_ERROR_NONE;
+}
+
+void *outgoing_handler(void *data){
+  global_state_t *state = (global_state_t *)data;
+  if (!state) return NULL;
+  
+  while (state->outgoing_thread_state == THREAD_STATE_RUNNING){
+    int rva = outgoing_subrun(state);
+    if (rva == CON_ERROR_NONE) continue;
+    break;
+  }
+  return NULL;
+}
 int main(int argc, char **argv) {
 
   global_state_t *state = NULL;
@@ -132,6 +159,7 @@ int main(int argc, char **argv) {
     fprintf(stderr,"Yikes %d\n",rva);
   }
   pthread_mutex_lock(&new_client->access);
+  new_client->thread_state = THREAD_STATE_RUNNING;
   rva = pthread_create(&new_client->handler_thread, NULL, client_handler, (void*) new_client);
   if (rva) perror("oops, thread");
   pthread_mutex_unlock(&new_client->access);

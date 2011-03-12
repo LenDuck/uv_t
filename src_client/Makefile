@@ -21,7 +21,7 @@ $(CPROG): $(CFILES) $(HFILES)
 	$(LD) $(OFILES) $(LDFLAGS) $(LIBS) -o $(ODIR)$(CPROG)
 
 bunny_$(CPROG): $(CFILES) $(HFILES)
-	$(BUNNY_CC) $(CFILES) $(CFLAGS) $(LIBS) -o $(ODIR)bunny_test
+	$(BUNNY_CC) $(CFILES) $(CFLAGS) $(LIBS) -o $(ODIR)bunny_$(CPROG)
 
 clean:
 	$(RM) $(OFILES) $(ODIR)$(CPROG)

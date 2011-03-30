@@ -11,16 +11,22 @@ int msg_get(client_state_t *client) {
   client_list_t *clients = client->global->clients;
   client_state_t *curr_client;
   char *buffer = NULL;
+  unsigned int textsize = 128;
+  char *text = malloc(textsize);
   //printf("sr\n");
   int status = con_line(con, &buffer);
   //printf("srozly: %s\n",buffer);
   //fflush(stdout);
+
+  /*Sanity check for input, len<4 is nonsense (say ,the shortest message*/
+  if (!buffer || (4 > strlen(buffer))){
+    free(buffer);
+    return 0;/*Not an error, just some noise*/
+  }
   if (status != CON_ERROR_NONE) {
     printf("ERROR! No. : %d\r\n", status);
     return 2;
   }
-  unsigned int textsize = 128;
-  char *text = malloc(textsize);
   if (!(text)) return 1;
   cmd_t *command = parse_command(buffer);
   msg_t *msg = malloc(sizeof(msg_t));

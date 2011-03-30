@@ -13,7 +13,10 @@ pthread_mutex_t mutex_print;
 con_t con = NULL;
 int error = 0;
 
-char *username = "userdef";
+char *username = NULL;
+
+#define SERVER_VERSION (1)
+#define MINOR_VERSION (0)
 
 int send_command(const char* cmd, const char *arg){
   char *msg = NULL;
@@ -108,11 +111,81 @@ int main(int argc, char **argv) {
   }
 
 
-  if (con){
-    con_send_line(con,"Ohai There");
+  if (! con){
+    fprintf(stderr,"connection failed\n");
+    return -1;
   }
   int num = 0;
 
+  { /*Get chat initial message, check version*/
+    char *ischat = NULL;
+    int rva = 0;
+    int version = -1;
+    int minor = -1;
+    
+    rva = con_line(con, &ischat);
+    if (rva ||(1 > strlen(ischat)) ){
+      fprintf(stderr,"Invalid welcome message:%s\n", ischat);
+      free(ischat);
+      con_close(con);
+      return 0;
+    }
+    rva = sscanf(ischat,"CHAT/%d.%d/\r\n",&version,&minor);
+//    printf("%s\n",ischat);
+    free(ischat);
+    if ((rva == 2) && (version == SERVER_VERSION)&&(minor >= MINOR_VERSION)){
+      /*OK*/
+      printf("Connection with server alive\n");
+    } else {
+      printf("Connection not with valid server: %d,%d\n",version,minor);
+      con_close(con);
+      return 0;
+    }
+  }
+
+  { /*Connect using CHAT command*/
+    char *ischat = NULL;
+    int rva = 0;
+    send_command("CHAT",NULL);
+    rva = con_line(con, &ischat);
+    printf("%s\n",ischat);
+      
+    if (rva ||(1 > strlen(ischat)) || (! (ischat[0] == '+'))){
+      fprintf(stderr,"Invalid CHAT response:%s\n", ischat);
+      free(ischat);
+      con_close(con);
+      return 0;
+    }
+    free(ischat);
+  }
+
+  { /*Try some usernames until success*/
+    while (con){
+      int rva = 0;
+      char buffer[128];
+      char *resp = NULL;
+      printf("Username please: ");
+      fflush(stdout);
+      buffer[0] = 0;
+      num = fscanf(stderr,"%127[^\n]",username);
+
+
+      if (num == 1){
+        username = realloc(username, 1+strlen(buffer));
+        strcpy(username,buffer);
+      }
+      scanf("%127[\n]",buffer);
+      send_command("USER",username);
+      rva = con_line(con, &resp);
+      if (rva ||(1 > strlen(resp)) || (! (resp[0] == '+'))){
+        fprintf(stderr,"Name taken:%s\n", resp);
+        free(resp);
+      } else {
+        free(resp);
+        break;/*done picking name*/
+      }
+    }
+  }
   num = pthread_create(&user_handler, NULL,handle_user,NULL);
   
   if (num){
@@ -124,7 +197,16 @@ int main(int argc, char **argv) {
     char *buffer = NULL;
     num++;
     rva = con_line(con,&buffer);
-    printf("Got_%d,%d: %s\n",num,rva,buffer);
+
+    if ((rva == CON_ERROR_NONE) &&
+        buffer &&
+        (strlen(buffer) > 0)
+       ){ 
+      pthread_mutex_lock(&mutex_print);
+      printf("%s\n",buffer);
+      pthread_mutex_unlock(&mutex_print);
+
+    }
     if (buffer) free(buffer);
     if (rva == CON_ERROR_NONE ) continue;
     printf("Receive error %d\n",rva);

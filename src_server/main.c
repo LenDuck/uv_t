@@ -8,8 +8,6 @@
 #include "dlogger.h"
 #include "server.h"
 
-#define WELCOME "Phasers do not include batteries,\nPhaser don't even include tangibility\r\n"
-
 global_state_t global_null(void){
   global_state_t ret;
   ret.clients = NULL;
@@ -54,7 +52,7 @@ int listen_subrun(global_state_t *state){
   rva = con_serve_accept(state->listen_connection, &new_client->connection);
   if (new_client->connection){
     con_send_line(new_client->connection,
-                  WELCOME);
+                  SERVER_WELCOME);
   } else { 
     fprintf(stderr,"Yikes %d\n",rva);
   }

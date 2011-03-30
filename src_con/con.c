@@ -381,17 +381,27 @@ int con_line(con_t con, char **target){
       if (con->logger) dlog_log_text("bw",con->logger);
 
       for (id=0;con->buffer_index < con->buffer_filled_to; con->buffer_index++){
-        if (buffer && is_linesep(con->buffer[con->buffer_index]) && strlen(buffer)){
-          /*not to append, but if buffer is filled accept as line*/ 
-          *target = buffer;
-  pthread_mutex_unlock(&con->line); 
-          return CON_ERROR_NONE;
+        /*buffer exists, endofline found, buffer lenght != 0*/
+        if (!buffer){
+          bufsize = id + 16;/*gradually increase buffersize*/
+          buffer = malloc(bufsize );
+          buffer[0] = 0;
+        }
+        if (!buffer) exit(1);/*alloc error exit*/
+        if (is_linesep(con->buffer[con->buffer_index]) ){
+          if (strlen(buffer)){
+            /*not to append, but if buffer is filled accept as line*/ 
+            *target = buffer;
+            pthread_mutex_unlock(&con->line); 
+            return CON_ERROR_NONE;
+          } /*else, empty string, do not return yet*/
         } else {
+          
           if (bufsize <= (id +1 )) {
-            bufsize = id + 16;
+            bufsize = id + 16;/*gradually increase buffersize*/
             buffer = realloc(buffer,bufsize );
           }
-          if (!buffer) exit(1);/*fixme*/
+          if (!buffer) exit(1);/*fixme, alloc error*/
           buffer[id] = con->buffer[con->buffer_index];
           id++;
           buffer[id] = 0;

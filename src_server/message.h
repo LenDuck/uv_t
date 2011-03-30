@@ -10,10 +10,6 @@
 #define THREAD_STATE_KILLNOW (3)
 #define THREAD_STATE_ERROR (4)
 
-#define SERVER_VERSION_MAYOR (1)
-#define SERVER_VERSION_MINOR (0)
-#define SERVER_VERSION_STRING "1.0"
-
 #define SERVER_WELCOME "CHAT/1.0/\r\n"
 
 int msg_get(client_state_t *client);

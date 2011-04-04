@@ -36,12 +36,12 @@ int client_subrun(client_state_t *state){
   }
   if (msg_get(state)) return CON_ERROR_UNKNOWN;
   
-  /*This the only place you can use state->current_line without the lock*/
   return CON_ERROR_NONE;
 }
 
 void *client_handler(void *input){
   client_state_t *state = (client_state_t *) input;
+  int error = 0;
 
   if (!input) return NULL;
   init_client(input);
@@ -49,14 +49,15 @@ void *client_handler(void *input){
   state->state |= CLIENT_STATE_CONNECTED;
   global_addclient(state->global,state);
   while (state->thread_state == THREAD_STATE_RUNNING){
-    if (client_subrun(state) == CON_ERROR_NONE) continue;
-    printf("Client break\n");
+    if ((error = client_subrun(state)) == CON_ERROR_NONE) continue; 
+    printf("Client break, reason: %d\n",error);
     break;
   }
   printf("Done client %d\n",state->thread_state);
   char *text = malloc(128);
   sprintf(text, "+LEAVE %s", state->username);
   global_send_others(state->global, text, state);
+  if (con_is_ok(state->connection)) con_close(state->connection);
   global_delclient(state->global, state);
   state_client_free(state);
   return NULL;

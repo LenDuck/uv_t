@@ -29,20 +29,17 @@ int global_addclient(global_state_t *gs, client_state_t *cl){
   pthread_mutex_lock(&gs->access);
   cur = gs->clients;
   if (!cur){
-    gs->clients = newc;
+   newc->next = NULL;
+   gs->clients = newc;
     pthread_mutex_unlock(&gs->access);
     return 0;
   }
-  cur->next = NULL;
-
   while (cur && cur->next){
     cur = cur->next;
   }
   gs->users_online++;
   if (cur){
     cur->next = newc;
-  } else {
-    gs->clients = newc;
   }
   pthread_mutex_unlock(&gs->access);
   return 0;
@@ -59,7 +56,7 @@ int global_delclient(global_state_t *gs, client_state_t *cl){
 
   pthread_mutex_lock(&gs->access);
   cur = gs->clients;
-  if (cur->next) cur->next = NULL;
+  
 
   while (cur && (! (cur->current == cl)) && cur->next){
     prev = cur;

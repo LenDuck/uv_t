@@ -74,11 +74,15 @@ void *handle_user(void* data){
       } else if ((len >= 4 ) && strncasecmp(userin+1, "quit",4) == 0){
         error = 42;/*quit*/
       } else if ((len >= 5 ) && strncasecmp(userin+1, "user ",5) == 0){
-        send_command("USER",userin +5);
+        send_command("USER",userin +6);
       } else if ((len >= 6 ) && strncasecmp(userin+1, "connect",6) == 0){
-        send_command("CHAT",userin +5);
+        send_command("CHAT",userin +6);
         send_command("USER",username);
-
+      } else if ((len >= 4 ) && strncasecmp(userin+1, "help",4) == 0){
+        pthread_mutex_lock(&mutex_print);
+        printf("Known commands: %c + :\n\twho\n\tme\n\tquit\n" + 
+          "\tuser\n\tconnect\n\thelp\n");
+        pthread_mutex_unlock(&mutex_print);
       } else {
         pthread_mutex_lock(&mutex_print);
         printf("Unknown command: '%s'\n",userin+1);

@@ -334,10 +334,14 @@ int con_recv(con_t con, void **target,int size){
   rva = recv(con->sockfd, *target, size, flags);
   if (rva == 0) {
     perror("ccon");
-    printf("data %p,%d,%d\n",(void*)target,buffersize,flags);
-    fflush(stdout);
-    printf("buffer %p\n",(void*)*target);
+//    printf("data %p,%d,%d\n",(void*)target,buffersize,flags);
+  //  fflush(stdout);
+  //  printf("buffer %p\n",(void*)*target);
     if (con->logger) dlog_log_text("Closed the connection",con->logger);
+     pthread_mutex_unlock(&con->recv);
+     con->status = CON_ERROR_CLOSED;
+      return 0;
+    
   } else if (rva == -1){
     perror("err, recv");
      printf("data %p,%d,%d\n",(void*)target,buffersize,flags); 
